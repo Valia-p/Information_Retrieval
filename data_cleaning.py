@@ -2,15 +2,12 @@ import pandas as pd
 import spacy
 import re
 from spacy.lang.el.stop_words import STOP_WORDS
-from greek_stemmer import stemmer
+from greek_stemmer import GreekStemmer
 
-
-stemmer_instance = stemmer()
-
-word = "αγοράζει"
-stemmed = stemmer.stem_word(word, "NNM").lower()
-
-print(f"Original: {word} → Stemmed: {stemmed}")
+# testing
+stemmer = GreekStemmer()
+print(stemmer.stem("ΕΥΧΑΡΙΣΤΗΣΑΤΕ"))
+print(stemmer.stem("ΕΛΛΑΔΑ"))
 
 FILEPATH = "Greek_Parliament_Proceedings_1989_2020_DataSample.csv"
 OUTPUT_FILE = "cleaned_data.csv"
@@ -75,7 +72,8 @@ def stem_word(word: str, pos: str) -> str:
     stem_pos = pos_map.get(pos, "NNM")  # default to noun
 
     try:
-        return stemmer.stem_word(word, stem_pos).lower()
+        # Pass word in uppercase to match stemmer requirements
+        return stemmer.stem_word(word.upper(), stem_pos).lower()
     except:
         return ""
 

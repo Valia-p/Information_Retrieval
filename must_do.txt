@@ -8,4 +8,12 @@ pip install greek-stemmer
 Πληροφορίες για τη βιβλιοθήκη: https://machinelearningknowledge.ai/tutorial-for-stopwords-in-spacy/
 
 
+Στο init βαλε στη θεση της def load_settings(self) αυτο που εχω απο κατω
+    def load_settings(self):
+        rules_file_path = os.path.join(os.path.dirname(__file__), "stemmer.yml")
+        with open(rules_file_path, encoding='utf-8') as f:
+            custom_rules = yaml.load(f.read(), Loader=yaml.SafeLoader)
+        return custom_rules
+
+
 
