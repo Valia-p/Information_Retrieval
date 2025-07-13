@@ -10,7 +10,7 @@ def get_number_of_docs():
 def create_inverse_index_catalogue():
     """
     The inverse index catalogue maps words to a list of documents containing the word and their term frequency.
-    word → {document_id: term frequency}
+    word → {document_id: term frequency,...}
     """
     df = pd.read_csv("cleaned_data.csv")
     inverse_index = {}
@@ -31,7 +31,7 @@ def create_inverse_index_catalogue():
                     inverse_index[word][doc_id] = 1
 
         # for testing
-        if idx % 10000 == 0 and idx > 0:
+        if idx % 10 == 0 and idx > 0:
             print(f"Processed {idx} speeches...")
             print(inverse_index)
 
@@ -39,4 +39,5 @@ def create_inverse_index_catalogue():
     with open("inverse_index.pkl", "wb") as f:
         pickle.dump(inverse_index, f)
 
-    print("Inverted index created and saved.")
+    print(f"Inverted index created with {len(inverse_index)} unique words.")
+    print("Saved to inverse_index.pkl.")

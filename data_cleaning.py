@@ -3,11 +3,10 @@ import spacy
 import re
 from spacy.lang.el.stop_words import STOP_WORDS
 from greek_stemmer import GreekStemmer
+import unicodedata
 
-# testing
+
 stemmer = GreekStemmer()
-print(stemmer.stem("ΕΥΧΑΡΙΣΤΗΣΑΤΕ"))
-print(stemmer.stem("ΕΛΛΑΔΑ"))
 
 FILEPATH = "Greek_Parliament_Proceedings_1989_2020_DataSample.csv"
 OUTPUT_FILE = "cleaned_data.csv"
@@ -46,6 +45,14 @@ def remove_unwanted_pattern(word: str) -> str:
     return cleaned_word
 
 
+def remove_accents(word: str) -> str:
+    # Remove accents
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', word)
+        if unicodedata.category(c) != 'Mn'
+    )
+
+
 def stem_word(word: str, pos: str) -> str:
     """
     Stem a word based on its part of speech tag.
@@ -60,21 +67,23 @@ def stem_word(word: str, pos: str) -> str:
     Example:
     stem_word("αγοράζει", "VERB") -> "αγοραζ"
     stem_word("πρόεδρος", "NOUN") -> "προεδρ"
+
+    **** POS map does not work. Fix in process if needed. ****
     """
-
-    pos_map = {
-        "NOUN": "NNM",
-        "VERB": "VB",
-        "ADJ": "JJM",
-        "ADV": "JJM",
-        "PROPN": "PRP"
-    }
-    stem_pos = pos_map.get(pos, "NNM")  # default to noun
-
     try:
-        # Pass word in uppercase to match stemmer requirements
-        return stemmer.stem_word(word.upper(), stem_pos).lower()
-    except:
+        word_clean = remove_accents(word).upper()
+
+        pos_map = {
+            "NOUN": "NNM",
+            "VERB": "VB",
+            "ADJ": "JJM",
+            "ADV": "JJM",
+            "PROPN": "PRP"
+        }
+        stem_pos = pos_map.get(pos, "NNM")  # default to noun
+
+        return stemmer.stem(word_clean).lower()
+    except Exception:
         return ""
 
 
@@ -84,33 +93,33 @@ def clean_text(text: str, dictionary: dict) -> str:
         clean_text("Ευχαριστώ κύριε Πρόεδρε!", {}) -> "ευχαριστ προεδρ"
     """
     # Run the text through the spaCy NLP pipeline (tokenization, POS tagging, etc.)
-    doc = nlp(text.replace('\xa0', ' '))  # Replace non-breaking spaces with normal spaces
+    doc = nlp(text.replace('\xa0', ' '))
     result = []
 
     for token in doc:
         raw = token.text
-        # If we've already processed this word, reuse it from the dictionary
         if raw in dictionary:
             result.append(dictionary[raw])
             continue
 
-        # Remove unwanted characters, stopwords, and invalid tokens
         cleaned = remove_unwanted_pattern(raw)
         if cleaned == "":
             continue
 
-        # Try to stem the word based on its part of speech
         stemmed = stem_word(cleaned, token.pos_)
-        # If stemming fails, fall back to lemmatization
         if stemmed == "":
             stemmed = token.lemma_.lower()
 
         dictionary[raw] = stemmed
         result.append(stemmed)
-    # for testing
-    print(">>>", result)
 
-    return " ".join(result)
+    cleaned_text = " ".join(result)
+
+    # for testing
+    if cleaned_text.strip():
+        print(">>>", cleaned_text)
+
+    return cleaned_text
 
 
 def process_dataset():
@@ -128,6 +137,11 @@ def process_dataset():
         cleaned_speeches.append(cleaned)
 
     df["cleaned_speech"] = cleaned_speeches
+    df = df[df["cleaned_speech"].str.strip() != ""]
+
+    df = df.reset_index(drop=True)
+    df["document_id"] = df.index
+
     df.to_csv(OUTPUT_FILE, index=False)
 
     print(f"Saved cleaned dataset to: {OUTPUT_FILE}")
