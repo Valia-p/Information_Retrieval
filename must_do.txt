@@ -1,0 +1,11 @@
+Στο terminal του PyCharm ή αν δουλευεις με Anaconda στο anaconda prompt:
+pip install spacy
+python -m spacy download el_core_news_sm
+
+pip install greek-stemmer
+
+
+Πληροφορίες για τη βιβλιοθήκη: https://machinelearningknowledge.ai/tutorial-for-stopwords-in-spacy/
+
+
+
