@@ -21,10 +21,28 @@
 
     </div>
 
+    <div class="keywordSearchForm">
+        <label>
+            <select id="typeSelect">
+                <option value="member">Βουλευτής</option>
+                <option value="party">Κόμμα</option>
+            </select>
+        </label>
+        <input type="text" id="nameInput" placeholder="π.χ. σκρεκας θεοδωρου κωνσταντινος">
+        <button id="showKeywordsBtn" style="width:100px">Προβολή keywords ανά έτος</button>
+    </div>
+
+    <div class="keywordResults"></div>
+
 <script>
     const searchButton = document.querySelector("button");
     const searchInput = document.querySelector("input[type='search']");
     const resultDiv = document.querySelector(".groupResults");
+
+    const showKeywordsBtn = document.getElementById("showKeywordsBtn");
+    const nameInput = document.getElementById("nameInput");
+    const typeSelect = document.getElementById("typeSelect");
+    const keywordResults = document.querySelector(".keywordResults");
 
     searchButton.addEventListener("click", () => {
         const query = searchInput.value;
@@ -52,6 +70,39 @@
                     `;
                     resultDiv.appendChild(div);
                 });
+            }
+        });
+    });
+
+        showKeywordsBtn.addEventListener("click", () => {
+        const name = nameInput.value.trim().toLowerCase();
+        const type = typeSelect.value;
+
+        if (!name) {
+            alert("Δώσε όνομα βουλευτή ή κόμματος.");
+            return;
+        }
+
+        fetch("/keywords/by_year", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ type: type, name: name })
+        })
+        .then(response => response.json())
+        .then(data => {
+            keywordResults.innerHTML = "";
+            if (data.error) {
+                keywordResults.innerHTML = "<p>Δε βρέθηκαν δεδομένα.</p>";
+                return;
+            }
+
+            for (const year in data) {
+                const keywords = data[year].join(", ");
+                const p = document.createElement("p");
+                p.innerHTML = `<strong>${year}:</strong> ${keywords}`;
+                keywordResults.appendChild(p);
             }
         });
     });
