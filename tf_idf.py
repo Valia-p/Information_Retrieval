@@ -46,3 +46,25 @@ def compute_tf_idf_similarity(query_tokens):
             scores[doc_id] = 0.0
 
     return scores
+
+
+# Use in part2.py
+def compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n=10):
+    num_docs_total = len(df)
+    word_scores = {}
+
+    for word in inverse_index:
+        docs = inverse_index[word]
+        for doc_id in doc_ids:
+            if doc_id not in docs:
+                continue
+            tf = docs[doc_id]
+            tf_weight = 1 + math.log(tf)
+            idf = math.log(1 + num_docs_total / len(docs))
+            if word not in word_scores:
+                word_scores[word] = 0.0
+            word_scores[word] += tf_weight * idf
+
+    sorted_words = sorted(word_scores.items(), key=lambda x: x[1], reverse=True)
+    return [word for word, _ in sorted_words[:top_n]]
+

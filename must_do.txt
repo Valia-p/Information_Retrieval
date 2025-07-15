@@ -16,4 +16,8 @@ pip install greek-stemmer
         return custom_rules
 
 
+pip install flask
+run app.py and go to πχ * Running on http://127.0.0.1:5000
+
+
 
