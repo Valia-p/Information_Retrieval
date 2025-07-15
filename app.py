@@ -1,10 +1,24 @@
 from flask import Flask, render_template, request, jsonify
 from tf_idf import compute_tf_idf_similarity, load_inverse_index_and_docs
-from query_processing import process_query  # ✅ import stemming pipeline
+from query_processing import process_query
+from data_cleaning import process_dataset
+from inverted_index import create_inverse_index_catalogue
+from part2 import run_all_part2_tasks
+import os
 
 app = Flask(__name__)
 
-# Load once at startup
+# Ensure all necessary files are created
+if not os.path.isfile("cleaned_data.csv"):
+    process_dataset()
+
+if not os.path.isfile("inverse_index.pkl"):
+    create_inverse_index_catalogue()
+
+if not os.path.exists("results") or not os.listdir("results"):
+    run_all_part2_tasks()
+
+# Load data once
 inverse_index, df = load_inverse_index_and_docs()
 
 
