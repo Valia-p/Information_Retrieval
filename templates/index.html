@@ -13,13 +13,13 @@
             <h1>Greek Parliament Information</h1>
         </div>
     </header>
-    <div class="searchBar">
-        <input type="search" placeholder="Search...">
-        <button type="submit"><i class="fa fa-search"></i></button>
-    </div>
-    <div class="groupResults">
 
+    <div class="searchBar">
+        <input type="search" id="searchInput" placeholder="Search...">
+        <button type="button" id="searchBtn"><i class="fa fa-search"></i></button>
     </div>
+
+    <div class="groupResults"></div>
 
     <div class="keywordSearchForm">
         <label>
@@ -35,8 +35,8 @@
     <div class="keywordResults"></div>
 
 <script>
-    const searchButton = document.querySelector("button");
-    const searchInput = document.querySelector("input[type='search']");
+    const searchButton = document.getElementById("searchBtn");
+    const searchInput = document.getElementById("searchInput");
     const resultDiv = document.querySelector(".groupResults");
 
     const showKeywordsBtn = document.getElementById("showKeywordsBtn");
@@ -44,6 +44,7 @@
     const typeSelect = document.getElementById("typeSelect");
     const keywordResults = document.querySelector(".keywordResults");
 
+    // SEARCH BUTTON
     searchButton.addEventListener("click", () => {
         const query = searchInput.value;
 
@@ -74,7 +75,8 @@
         });
     });
 
-        showKeywordsBtn.addEventListener("click", () => {
+    // KEYWORDS BY YEAR BUTTON
+    showKeywordsBtn.addEventListener("click", () => {
         const name = nameInput.value.trim().toLowerCase();
         const type = typeSelect.value;
 
@@ -99,9 +101,11 @@
             }
 
             for (const year in data) {
-                const keywords = data[year].join(", ");
                 const p = document.createElement("p");
-                p.innerHTML = `<strong>${year}:</strong> ${keywords}`;
+                p.innerHTML = `<strong>${year}:</strong><br>`;
+                data[year].forEach(obj => {
+                    p.innerHTML += `&nbsp;&nbsp;• ${obj.keyword} (score: ${obj.score})<br>`;
+                });
                 keywordResults.appendChild(p);
             }
         });
