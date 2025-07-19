@@ -1,0 +1,74 @@
+html, body {
+    margin: 0;
+    height: 100vh;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    display: flex;
+    background-color: #98D2C0;
+    justify-content: center;
+}
+
+h1 {
+    text-align: center;
+    color: #121212;
+}
+
+.searchBar {
+    display: flex;
+    justify-content: center;
+    margin: 20px;
+    padding: 20px;
+}
+
+#search, #typeSelect {
+    font-size: 15px;
+    width: 350px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid black;
+}
+
+#typeSelect {
+    width: 120px;
+    margin-right: 10px;
+    background-color: #D5E5D5;
+}
+
+#typeSelect:hover {
+    cursor: pointer;
+}
+
+#checkBox {
+    border: 1px solid black;
+    margin-left: 20px;
+}
+
+label {
+    font-size: 15px;
+    align-self: center;
+    margin: 0 10px 0 5px;
+}
+
+
+button {
+    margin-left: 10px;
+    font-size: 17px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid black;
+    background-color: white;
+    width: 40px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #07051a;
+    color: white;
+}
