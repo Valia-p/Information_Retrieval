@@ -1,26 +1,49 @@
 from flask import Flask, render_template, request, jsonify
-from tf_idf import compute_tf_idf_similarity, load_inverse_index_and_docs
+from tf_idf import load_inverse_index_and_docs
 from query_processing import process_query
 from data_cleaning import process_dataset
 from inverted_index import create_inverse_index_catalogue
-from part2 import run_all_part2_tasks, compute_keywords_by_year_for_entity, normalize
-import json
+from part2 import run_all_part2_tasks, find_entity_id_by_name
+from create_database import create_schema, populate_data, is_part2_already_computed
+import sqlite3
 import os
 
-app = Flask(__name__)
+DB_NAME = "parliament.db"
+CSV_FILE = "cleaned_data.csv"
 
-# Ensure all necessary files are created
-if not os.path.isfile("cleaned_data.csv"):
+# Create cleaned_data.csv if it does not exist
+if not os.path.isfile(CSV_FILE):
+    print("Creating cleaned_data.csv")
     process_dataset()
 
+# Create inverse_index.pkl if it does not exist
 if not os.path.isfile("inverse_index.pkl"):
+    print("Creating inverse index catalogue")
     create_inverse_index_catalogue()
 
-if not os.path.exists("results") or not os.listdir("results"):
-    run_all_part2_tasks()
+# Create db schema if it does not exist
+if not os.path.isfile(DB_NAME):
+    print(f"Creating SQLite database '{DB_NAME}'")
+    conn = sqlite3.connect(DB_NAME)
+    create_schema(conn)
+    populate_data(conn, CSV_FILE)
+    conn.close()
 
-# Load data once
-inverse_index, df = load_inverse_index_and_docs()
+# Compute TF-IDF if it does not exist
+if not is_part2_already_computed():
+    try:
+        print("Computing and storing TF-IDF keyword analysis...")
+        run_all_part2_tasks()
+    except Exception as e:
+        print(f"Error while computing part2 tasks: {e}")
+else:
+    print("Keyword analysis already exists. Skipping part2 processing.")
+
+# Flask App
+app = Flask(__name__)
+
+# Load data and index
+inverse_index, df, _, _ = load_inverse_index_and_docs()
 
 
 @app.route("/")
@@ -31,25 +54,65 @@ def index():
 @app.route("/search", methods=["POST"])
 def search():
     data = request.get_json()
-    query = data.get("query", "")
+    query = data.get("query", "").strip()
+
+    if not query:
+        return jsonify([])
+
+    # Process user query (normalize, lowercase, stem, etc.)
     tokens = process_query(query)
 
-    scores = compute_tf_idf_similarity(tokens)
-    top_docs = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)[:5]
+    # Get TF-IDF scores for speeches that contain any of the keywords
+    from collections import defaultdict
+    scores = defaultdict(float)
+
+    conn = sqlite3.connect("parliament.db")
+    cursor = conn.cursor()
+
+    for token in tokens:
+        cursor.execute("""
+            SELECT speech_id, score
+            FROM speech_keywords
+            WHERE keyword = ?
+        """, (token,))
+        for speech_id, score in cursor.fetchall():
+            scores[speech_id] += score  # sum score if multiple keywords match
+
+    if not scores:
+        conn.close()
+        return jsonify([])
+
+    # Get top 5 speeches by score
+    top_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:5]
+    doc_ids = [doc_id for doc_id, _ in top_docs]
+    scores_dict = dict(top_docs)
+
+    placeholders = ",".join("?" for _ in doc_ids)
+    cursor.execute(f"""
+        SELECT s.doc_id, s.speech, s.sitting_date,
+               m.full_name, p.name
+        FROM speeches s
+        JOIN members m ON s.member_id = m.id
+        JOIN parties p ON s.party_id = p.id
+        WHERE s.doc_id IN ({placeholders})
+    """, tuple(doc_ids))
+
+    rows = cursor.fetchall()
+    conn.close()
 
     results = []
-    for doc_id, score in top_docs:
-        if score == 0:
-            continue
-        speech = df.loc[doc_id, "cleaned_speech"][:300] + "..."
+    for doc_id, speech, date, member, party in rows:
+        excerpt = speech[:300] + "..." if len(speech) > 300 else speech
         results.append({
             "doc_id": doc_id,
-            "score": round(score, 4),
-            "speech": speech,
-            "member": df.loc[doc_id, "member_name"],
-            "party": df.loc[doc_id, "political_party"],
-            "date": df.loc[doc_id, "sitting_date"]
+            "score": round(scores_dict.get(doc_id, 0.0), 4),
+            "speech": excerpt,
+            "member": member,
+            "party": party,
+            "date": date
         })
+
+    results.sort(key=lambda x: -x["score"])
 
     return jsonify(results)
 
@@ -57,33 +120,63 @@ def search():
 @app.route("/keywords/by_year", methods=["POST"])
 def keywords_by_year():
     data = request.get_json()
-    entity_type = data.get("type")  # member or party
+    entity_type = data.get("type")  # "member" ή "party"
     entity_name = data.get("name")
 
     if not entity_type or not entity_name:
         return jsonify({"error": "Missing parameters"}), 400
 
-    entity_column = "member_name" if entity_type == "member" else "political_party"
-    norm_name = normalize(entity_name).replace(" ", "_")
+    # Define table & filed based on entity type
+    if entity_type == "member":
+        table = "member_keywords_by_year"
+        id_field = "member_id"
+        lookup_table = "members"
+        lookup_field = "full_name"
+    elif entity_type == "party":
+        table = "party_keywords_by_year"
+        id_field = "party_id"
+        lookup_table = "parties"
+        lookup_field = "name"
+    else:
+        return jsonify({"error": "Invalid entity type"}), 400
 
-    filename = f"keywords_per_year_{entity_column}_{norm_name}.json"
-    filepath = os.path.join("results", filename)
+    try:
+        conn = sqlite3.connect(DB_NAME)
 
-    # Try to compute if not exist
-    if not os.path.exists(filepath):
-        try:
-            compute_keywords_by_year_for_entity(inverse_index, df, entity_column, entity_name, top_n=10)
-        except Exception as e:
-            return jsonify({"error": f"Computation failed: {str(e)}"}), 500
+        # Use normalized string for search
+        entity_id = find_entity_id_by_name(conn, lookup_table, lookup_field, entity_name)
+        if entity_id is None:
+            return jsonify({"error": f"{entity_type.title()} not found"}), 404
 
-        if not os.path.exists(filepath):
+        # Πάρε όλα τα keywords ανά έτος και score
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT year, keyword, score
+            FROM {table}
+            WHERE {id_field} = ?
+            ORDER BY year ASC, score DESC
+        """, (entity_id,))
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
             return jsonify({"error": "No data found"}), 404
 
-    with open(filepath, "r", encoding="utf-8") as f:
-        result = json.load(f)
+        # Group by year
+        result = {}
+        for year, keyword, score in rows:
+            year = str(int.from_bytes(year, byteorder="little")) if isinstance(year, bytes) else str(year)
 
-    return jsonify(result)
+            if year not in result:
+                result[year] = []
+            result[year].append({"keyword": keyword, "score": round(score, 4)})
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
