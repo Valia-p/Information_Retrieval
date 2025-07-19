@@ -1,101 +1,108 @@
-import os
-import json
 import pandas as pd
 import unidecode
+import sqlite3
 from tf_idf import load_inverse_index_and_docs, compute_tf_idf_keywords_subset
-
-
-def save_results_to_json(data, filename):
-    os.makedirs("results", exist_ok=True)
-    filepath = os.path.join("results", filename)
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def normalize(text):
     return unidecode.unidecode(text.strip().lower())
 
 
-# Calculates top-N keywords for each speech (document)
-def compute_keywords_per_speech(inverse_index, df, top_n=5):
-    result = {}
-    for doc_id in range(len(df)):
-        keywords = compute_tf_idf_keywords_subset(inverse_index, df, [doc_id], top_n)
-        result[str(doc_id)] = keywords
-    save_results_to_json(result, "keywords_per_speech.json")
+def store_speech_keywords_to_db(conn, speech_keywords: dict):
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM speech_keywords")
+    for doc_id, keywords in speech_keywords.items():
+        for word, score in keywords:
+            cursor.execute("""
+                INSERT INTO speech_keywords (speech_id, keyword, score)
+                VALUES (?, ?, ?)
+            """, (doc_id, word, score))
+    conn.commit()
 
 
-# Calculates top-N keywords for each member of parliament
-def compute_keywords_per_speaker(inverse_index, df, top_n=10):
-    result = {}
-    speakers = df["member_name"].dropna().unique()
-    for speaker in speakers:
-        doc_ids = df[df["member_name"] == speaker].index.tolist()
-        if doc_ids:
-            keywords = compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n)
-            result[speaker] = keywords
-    save_results_to_json(result, "keywords_per_speaker.json")
+def store_member_keywords_by_year(conn, member_keywords: dict):
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM member_keywords_by_year")
+    for (member_id, year), keywords in member_keywords.items():
+        for word, score in keywords:
+            cursor.execute("""
+                INSERT INTO member_keywords_by_year (member_id, year, keyword, score)
+                VALUES (?, ?, ?, ?)
+            """, (member_id, year, word, score))
+    conn.commit()
 
 
-# Calculates top-N keywords for each political party
-def compute_keywords_per_party(inverse_index, df, top_n=10):
-    result = {}
-    parties = df["political_party"].dropna().unique()
-    for party in parties:
-        doc_ids = df[df["political_party"] == party].index.tolist()
-        if doc_ids:
-            keywords = compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n)
-            result[party] = keywords
-    save_results_to_json(result, "keywords_per_party.json")
-
-
-# Calculates keywords by year for a specific entity (member of parliament or party)
-# 'entity_column' is either 'member_name' or 'political_party'
-# 'entity_name' is the normalized name to match
-def compute_keywords_by_year_for_entity(inverse_index, df, entity_column, entity_name, top_n=10):
-    df["year"] = pd.to_datetime(df["sitting_date"], dayfirst=True).dt.year
-
-    entity_norm = normalize(entity_name)
-    result = {}
-
-    for year in sorted(df["year"].unique()):
-        docs_year = df[df["year"] == year]
-        filtered = docs_year[docs_year[entity_column].fillna("").apply(normalize) == entity_norm]
-        doc_ids = filtered.index.tolist()
-        if doc_ids:
-            keywords = compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n)
-            result[str(year)] = keywords
-
-    filename = f"keywords_per_year_{entity_column}_{entity_norm.replace(' ', '_')}.json"
-    save_results_to_json(result, filename)
-
-
-# Calculates keyword evolution by year across all speeches
-def keyword_evolution_by_year(inverse_index, df, top_n=10):
-    df["year"] = pd.to_datetime(df["sitting_date"], dayfirst=True).dt.year
-
-    result = {}
-
-    for year in sorted(df["year"].unique()):
-        doc_ids = df[df["year"] == year].index.tolist()
-        if doc_ids:
-            keywords = compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n)
-            result[str(year)] = keywords
-
-    save_results_to_json(result, "keywords_evolution_per_year.json")
-
-
-# some example for testing
-def demo_σκρεκας_nd(inverse_index, df):
-    compute_keywords_by_year_for_entity(inverse_index, df, "member_name", "σκρεκας θεοδωρου κωνσταντινος", top_n=10)
-    compute_keywords_by_year_for_entity(inverse_index, df, "political_party", "νεα δημοκρατια", top_n=10)
+def store_party_keywords_by_year(conn, party_keywords: dict):
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM party_keywords_by_year")
+    for (party_id, year), keywords in party_keywords.items():
+        for word, score in keywords:
+            cursor.execute("""
+                INSERT INTO party_keywords_by_year (party_id, year, keyword, score)
+                VALUES (?, ?, ?, ?)
+            """, (party_id, year, word, score))
+    conn.commit()
 
 
 def run_all_part2_tasks():
-    inverse_index, df = load_inverse_index_and_docs()
+    inverse_index, df, _, _ = load_inverse_index_and_docs()
+    df["year"] = pd.to_datetime(df["sitting_date"], dayfirst=True).dt.year
 
-    compute_keywords_per_speech(inverse_index, df)
-    compute_keywords_per_speaker(inverse_index, df)
-    compute_keywords_per_party(inverse_index, df)
-    keyword_evolution_by_year(inverse_index, df)
-    demo_σκρεκας_nd(inverse_index, df)
+    # Compute keywords per speech
+    print("[...] Computing keywords per speech")
+    speech_keywords = {}
+    for doc_id in range(len(df)):
+        keywords = compute_tf_idf_keywords_subset(inverse_index, df, [doc_id], top_n=5, return_scores=True)
+        speech_keywords[doc_id] = keywords
+
+    # Compute member keywords per year
+    print("[...] Computing keywords per member by year")
+    member_keywords = {}
+    for (member, year), group in df.groupby(["member_name", "year"]):
+        doc_ids = group.index.tolist()
+        if not doc_ids:
+            continue
+        keywords = compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n=10, return_scores=True)
+
+        with sqlite3.connect("parliament.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM members WHERE full_name = ?", (member,))
+            result = cursor.fetchone()
+            if result:
+                member_id = result[0]
+                member_keywords[(member_id, year)] = keywords
+
+    # Compute party keywords per year
+    print("[...] Computing keywords per party by year")
+    party_keywords = {}
+    for (party, year), group in df.groupby(["political_party", "year"]):
+        doc_ids = group.index.tolist()
+        if not doc_ids:
+            continue
+        keywords = compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n=10, return_scores=True)
+
+        with sqlite3.connect("parliament.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM parties WHERE name = ?", (party,))
+            result = cursor.fetchone()
+            if result:
+                party_id = result[0]
+                party_keywords[(party_id, year)] = keywords
+
+    # Save all to DB
+    with sqlite3.connect("parliament.db") as conn:
+        store_speech_keywords_to_db(conn, speech_keywords)
+        store_member_keywords_by_year(conn, member_keywords)
+        store_party_keywords_by_year(conn, party_keywords)
+
+    print("[✓] Keywords stored in database.")
+
+
+def find_entity_id_by_name(conn, table, field, target_name):
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT id, {field} FROM {table}")
+    for entity_id, name in cursor.fetchall():
+        if normalize(name) == normalize(target_name):
+            return entity_id
+    return None
+
