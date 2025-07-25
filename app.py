@@ -5,11 +5,16 @@ from data_cleaning import process_dataset
 from inverted_index import create_inverse_index_catalogue
 from part2 import run_all_part2_tasks, find_entity_id_by_name
 from create_database import create_schema, populate_data, is_part2_already_computed
+from LSI import build_tfidf_matrix, perform_lsi, clustering_lsi_docs
 import sqlite3
 import os
 
 DB_NAME = "parliament.db"
 CSV_FILE = "cleaned_data.csv"
+TFIDF_FILE = "tfidf_matrix.npz"
+DOC_IDS_FILE = "doc_ids.npy"
+LSI_OUTPUT_FILE = "lsi_projected_docs.npz"
+CLUSTERS_FILE = "final_clustering_results.pkl"
 
 # Create cleaned_data.csv if it does not exist
 if not os.path.isfile(CSV_FILE):
@@ -38,6 +43,22 @@ if not is_part2_already_computed():
         print(f"Error while computing part2 tasks: {e}")
 else:
     print("Keyword analysis already exists. Skipping part2 processing.")
+
+# Files needed for LSI
+if not os.path.exists(TFIDF_FILE) or not os.path.exists(DOC_IDS_FILE):
+    build_tfidf_matrix()
+else:
+    print("TF-IDF already exists. Skipping...")
+
+if not os.path.exists(LSI_OUTPUT_FILE):
+    perform_lsi()
+else:
+    print("LSI projection already exists. Skipping...")
+
+if not os.path.exists(CLUSTERS_FILE):
+    clustering_lsi_docs()
+else:
+    print("Clustering already exists. Skipping...")
 
 # Flask App
 app = Flask(__name__)
