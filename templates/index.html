@@ -4,111 +4,334 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width initial-scale=1">
     <title>Information Retrieval</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<!--    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="static/normalize.css">
+    <link rel="stylesheet" href="static/styles.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
-        <div class="headerText">
-            <h1>Greek Parliament Information</h1>
+        <div class="container">
+            <h1>Hellenic Parliament Information</h1>
+            <nav>
+                <ul>
+                    <li><a href="#search">Search</a></li>
+                    <li><a href="#keywords">Keyword Tracking</a></li>
+                    <li><a href="#similarity">Similarity Analysis</a></li>
+                    <li><a href="#themes">Thematic Analysis</a></li>
+<!--                    <li><a href="#sentiment">Sentiment Analysis</a></li>-->
+                </ul>
+            </nav>
         </div>
     </header>
 
-    <div class="searchBar">
-        <input type="search" id="searchInput" placeholder="Search...">
-        <button type="button" id="searchBtn"><i class="fa fa-search"></i></button>
-    </div>
+    <main>
+        <!-- Search Section -->
+        <section id="search" class="section">
+            <div class="container">
+                <h2>Search Parliamentary Speeches</h2>
+                <div class="search-container">
+                    <form id="search-form">
+                        <div class="search-row">
+                            <input type="text" id="search-input" placeholder="Enter keywords or phrases...">
+                            <button type="submit">Search</button>
+                        </div>
+                        <div class="search-filters">
+                            <div class="filter-group">
+                                <label for="date-range">Date Range:</label>
+                                <select id="date-range">
+                                    <option value="all">All Time (1989-2020)</option>
+                                    <option value="1989-1995">1989-1995</option>
+                                    <option value="1996-2000">1996-2000</option>
+                                    <option value="2001-2005">2001-2005</option>
+                                    <option value="2006-2010">2006-2010</option>
+                                    <option value="2011-2015">2011-2015</option>
+                                    <option value="2016-2020">2016-2020</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="party-filter">Political Party:</label>
+                                <select id="party-filter">
+                                    <option value="all">All Parties</option>
+                                    <option value="nd">New Democracy</option>
+                                    <option value="pasok">PASOK</option>
+                                    <option value="syriza">SYRIZA</option>
+                                    <option value="kke">KKE</option>
+                                    <option value="other">Other Parties</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="mp-filter">Parliament Member:</label>
+                                <select id="mp-filter">
+                                    <option value="all">All Members</option>
+                                    <!-- This will be populated dynamically with JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="search-results" id="search-results">
+                    <!-- Search results will be displayed here -->
+                    <p class="placeholder-text">Enter search terms above to see results</p>
+                </div>
+            </div>
+        </section>
 
-    <div class="groupResults"></div>
+        <!-- Keyword Tracking Section -->
+        <section id="keywords" class="section">
+            <div class="container">
+                <h2>Keyword Tracking Over Time</h2>
+                <div class="keyword-tracking">
+                    <div class="tracking-controls">
+                        <input type="text" id="keyword-input" placeholder="Enter keyword(s) to track">
+                        <button id="add-keyword">Add</button>
+                        <div class="keyword-tags" id="keyword-tags">
+                            <!-- Keywords will be added here -->
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="keyword-chart"></canvas>
+                    </div>
+                    <div class="tracking-filters">
+                        <div class="filter-group">
+                            <label for="tracking-view">View By:</label>
+                            <select id="tracking-view">
+                                <option value="overall">Overall Frequency</option>
+                                <option value="party">By Political Party</option>
+                                <option value="speaker">By Top Speakers</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <div class="keywordSearchForm">
-        <label>
-            <select id="typeSelect">
-                <option value="member">Βουλευτής</option>
-                <option value="party">Κόμμα</option>
-            </select>
-        </label>
-        <input type="text" id="nameInput" placeholder="π.χ. σκρεκας θεοδωρου κωνσταντινος">
-        <button id="showKeywordsBtn" style="width:100px">Προβολή keywords ανά έτος</button>
-    </div>
+        <!-- Similarity Analysis Section -->
+        <section id="similarity" class="section">
+            <div class="container">
+                <h2>Parliament Member Similarity</h2>
+                <p>Discover which parliament members have similar speech patterns and content</p>
+                <div class="similarity-controls">
+                    <div class="filter-group">
+                        <label for="similarity-mp">Select Parliament Member:</label>
+                        <select id="similarity-mp">
+                            <option value="">Select a parliament member</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="similarity-metric">Similarity Metric:</label>
+                        <select id="similarity-metric">
+                            <option value="content">Content Similarity</option>
+                            <option value="style">Style Similarity</option>
+                            <option value="topics">Topic Distribution</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="similarity-visualization">
+                    <div class="chart-container">
+                        <canvas id="similarity-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <div class="keywordResults"></div>
+        <!-- Thematic Analysis Section -->
+        <section id="themes" class="section">
+            <div class="container">
+                <h2>Thematic Analysis</h2>
+                <p>Explore dominant themes in parliamentary discourse using Latent Semantic Indexing</p>
+                <div class="theme-controls">
+                    <div class="filter-group">
+                        <label for="theme-period">Time Period:</label>
+                        <select id="theme-period">
+                            <option value="all">All Time (1989-2020)</option>
+                            <option value="1989-1995">1989-1995</option>
+                            <option value="1996-2000">1996-2000</option>
+                            <option value="2001-2005">2001-2005</option>
+                            <option value="2006-2010">2006-2010</option>
+                            <option value="2011-2015">2011-2015</option>
+                            <option value="2016-2020">2016-2020</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="theme-party">Political Party:</label>
+                        <select id="theme-party">
+                            <option value="all">All Parties</option>
+                            <option value="nd">New Democracy</option>
+                            <option value="pasok">PASOK</option>
+                            <option value="syriza">SYRIZA</option>
+                            <option value="kke">KKE</option>
+                            <option value="other">Other Parties</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="theme-visualization">
+                    <div class="chart-container">
+                        <canvas id="theme-chart"></canvas>
+                    </div>
+                    <div class="theme-clusters">
+                        <!-- Theme clusters will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
 <script>
-    const searchButton = document.getElementById("searchBtn");
-    const searchInput = document.getElementById("searchInput");
-    const resultDiv = document.querySelector(".groupResults");
+<!--    const searchButton = document.getElementById("searchBtn");-->
+<!--    const searchInput = document.getElementById("searchInput");-->
+<!--    const resultDiv = document.querySelector(".groupResults");-->
 
-    const showKeywordsBtn = document.getElementById("showKeywordsBtn");
-    const nameInput = document.getElementById("nameInput");
-    const typeSelect = document.getElementById("typeSelect");
-    const keywordResults = document.querySelector(".keywordResults");
+<!--    const showKeywordsBtn = document.getElementById("showKeywordsBtn");-->
+<!--    const nameInput = document.getElementById("nameInput");-->
+<!--    const typeSelect = document.getElementById("typeSelect");-->
+<!--    const keywordResults = document.querySelector(".keywordResults");-->
 
-    // SEARCH BUTTON
-    searchButton.addEventListener("click", () => {
-        const query = searchInput.value;
+<!--    // SEARCH BUTTON-->
+<!--    searchButton.addEventListener("click", () => {-->
+<!--        const query = searchInput.value;-->
 
-        fetch("/search", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ query: query })
-        })
-        .then(response => response.json())
-        .then(data => {
-            resultDiv.innerHTML = "";
-            if (data.length === 0) {
-                resultDiv.innerHTML = "<p>No results found.</p>";
-            } else {
-                data.forEach(item => {
-                    const div = document.createElement("div");
-                    div.classList.add("result");
-                    div.innerHTML = `
-                        <h3>${item.member} (${item.party}) - ${item.date}</h3>
-                        <p><strong>Score:</strong> ${item.score}</p>
-                        <p>${item.speech}</p>
-                    `;
-                    resultDiv.appendChild(div);
-                });
-            }
-        });
-    });
+<!--        fetch("/search", {-->
+<!--            method: "POST",-->
+<!--            headers: {-->
+<!--                "Content-Type": "application/json"-->
+<!--            },-->
+<!--            body: JSON.stringify({ query: query })-->
+<!--        })-->
+<!--        .then(response => response.json())-->
+<!--        .then(data => {-->
+<!--            resultDiv.innerHTML = "";-->
+<!--            if (data.length === 0) {-->
+<!--                resultDiv.innerHTML = "<p>No results found.</p>";-->
+<!--            } else {-->
+<!--                data.forEach(item => {-->
+<!--                    const div = document.createElement("div");-->
+<!--                    div.classList.add("result");-->
+<!--                    div.innerHTML = `-->
+<!--                        <h3>${item.member} (${item.party}) - ${item.date}</h3>-->
+<!--                        <p><strong>Score:</strong> ${item.score}</p>-->
+<!--                        <p>${item.speech}</p>-->
+<!--                    `;-->
+<!--                    resultDiv.appendChild(div);-->
+<!--                });-->
+<!--            }-->
+<!--        });-->
+<!--    });-->
 
-    // KEYWORDS BY YEAR BUTTON
-    showKeywordsBtn.addEventListener("click", () => {
-        const name = nameInput.value.trim().toLowerCase();
-        const type = typeSelect.value;
+<!--    // KEYWORDS BY YEAR BUTTON-->
+<!--    showKeywordsBtn.addEventListener("click", () => {-->
+<!--        const name = nameInput.value.trim().toLowerCase();-->
+<!--        const type = typeSelect.value;-->
 
-        if (!name) {
-            alert("Δώσε όνομα βουλευτή ή κόμματος.");
-            return;
-        }
+<!--        if (!name) {-->
+<!--            alert("Δώσε όνομα βουλευτή ή κόμματος.");-->
+<!--            return;-->
+<!--        }-->
 
-        fetch("/keywords/by_year", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ type: type, name: name })
-        })
-        .then(response => response.json())
-        .then(data => {
-            keywordResults.innerHTML = "";
-            if (data.error) {
-                keywordResults.innerHTML = "<p>Δε βρέθηκαν δεδομένα.</p>";
+<!--        fetch("/keywords/by_year", {-->
+<!--            method: "POST",-->
+<!--            headers: {-->
+<!--                "Content-Type": "application/json"-->
+<!--            },-->
+<!--            body: JSON.stringify({ type: type, name: name })-->
+<!--        })-->
+<!--        .then(response => response.json())-->
+<!--        .then(data => {-->
+<!--            keywordResults.innerHTML = "";-->
+<!--            if (data.error) {-->
+<!--                keywordResults.innerHTML = "<p>Δε βρέθηκαν δεδομένα.</p>";-->
+<!--                return;-->
+<!--            }-->
+
+<!--            for (const year in data) {-->
+<!--                const p = document.createElement("p");-->
+<!--                p.innerHTML = `<strong>${year}:</strong><br>`;-->
+<!--                data[year].forEach(obj => {-->
+<!--                    p.innerHTML += `&nbsp;&nbsp;• ${obj.keyword} (score: ${obj.score})<br>`;-->
+<!--                });-->
+<!--                keywordResults.appendChild(p);-->
+<!--            }-->
+<!--        });-->
+<!--    });-->
+
+    //-----------------------------------------------------------------------------------
+
+    // Κάνει ένα απλό search χωρίς φίλτρα προς στιγμήν
+    // Search functionality for Hellenic Parliament Speech Analysis Platform
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchForm = document.getElementById('search-form');
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        const dateRangeFilter = document.getElementById('date-range');
+        const partyFilter = document.getElementById('party-filter');
+        const mpFilter = document.getElementById('mp-filter');
+
+        if (!searchForm || !searchResults) return;
+
+        // Search form submission handler
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (searchTerm === '') {
+                searchResults.innerHTML = '<p class="placeholder-text">Enter search terms above to see results</p>';
                 return;
             }
 
-            for (const year in data) {
-                const p = document.createElement("p");
-                p.innerHTML = `<strong>${year}:</strong><br>`;
-                data[year].forEach(obj => {
-                    p.innerHTML += `&nbsp;&nbsp;• ${obj.keyword} (score: ${obj.score})<br>`;
-                });
-                keywordResults.appendChild(p);
-            }
+            // Get filter values
+            const dateRange = dateRangeFilter.value;
+            const party = partyFilter.value;
+            const mp = mpFilter.value;
+
+            //-------------------------------------
+            fetch("/search", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ query: searchTerm })
+            })
+            .then(response => response.json())
+            .then(data => {
+                searchResults.innerHTML = "";
+                if (data.length === 0) {
+                    searchResults.innerHTML = "<p>No results found.</p>";
+                } else {
+                    console.log(data);
+                    data.forEach(item => {
+                        const div = document.createElement("div");
+                        div.classList.add("result");
+                        div.innerHTML = `
+                            <h3>${item.member} (${item.party}) - ${item.date}</h3>
+                            <p><strong>Score:</strong> ${item.score}</p>
+                            <p>${item.speech}</p>
+                        `;
+                        
+                        div.style.backgroundColor = "white";
+                        div.style.padding = "var(--spacing-lg)";
+                        div.style.margin = "5px";
+                        div.style.borderRadius = "var(--radius-md)";
+                        div.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.1)";
+                        div.style.minHeight = "200px";
+
+                        searchResults.appendChild(div);
+                    });
+                }
+            });
+            //-------------------------------------
+
+    <!--        // Perform search with filters-->
+    <!--        const results = performSearch(searchTerm, dateRange, party, mp);-->
+
+    <!--        // Display results-->
+    <!--        displaySearchResults(results);-->
         });
+
+
     });
 </script>
 </body>
