@@ -95,7 +95,7 @@ def run_all_part2_tasks():
         store_member_keywords_by_year(conn, member_keywords)
         store_party_keywords_by_year(conn, party_keywords)
 
-    print("[✓] Keywords stored in database.")
+    print("Keywords stored in database.")
 
 
 def find_entity_id_by_name(conn, table, field, target_name):

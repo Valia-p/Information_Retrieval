@@ -8,7 +8,7 @@ import unicodedata
 
 #stemmer = GreekStemmer()
 
-FILEPATH = "Greek_Parliament_Proceedings_1989_2020_DataSample.csv"
+FILEPATH = "Greek_Parliament_Proceedings_1989_2020.csv"
 OUTPUT_FILE = "cleaned_data.csv"
 
 try:

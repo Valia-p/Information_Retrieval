@@ -80,32 +80,39 @@
 
         <!-- Keyword Tracking Section -->
         <section id="keywords" class="section">
-            <div class="container">
-                <h2>Keyword Tracking Over Time</h2>
-                <div class="keyword-tracking">
-                    <div class="tracking-controls">
-                        <input type="text" id="keyword-input" placeholder="Enter keyword(s) to track">
-                        <button id="add-keyword">Add</button>
-                        <div class="keyword-tags" id="keyword-tags">
-                            <!-- Keywords will be added here -->
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="keyword-chart"></canvas>
-                    </div>
-                    <div class="tracking-filters">
-                        <div class="filter-group">
-                            <label for="tracking-view">View By:</label>
-                            <select id="tracking-view">
-                                <option value="overall">Overall Frequency</option>
-                                <option value="party">By Political Party</option>
-                                <option value="member">By Top Speakers</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+          <div class="container">
+            <h2>Keyword Tracking Over Time</h2>
+
+            <div class="keyword-tracking">
+              <div class="tracking-controls">
+                <label for="tracking-view">View By:</label>
+                <select id="tracking-view">
+                  <option value="overall">Overall</option>
+                  <option value="member">By Member</option>
+                  <option value="party">By Political Party</option>
+                </select>
+
+                <select id="entity-select" style="display:none">
+                  <option value="" selected disabled>Choose from list…</option>
+                </select>
+
+                <label for="topk-select" style="margin-left:.5rem;">Top</label>
+                  <select id="topk-select">
+                    <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                    <option selected>8</option>
+                    <option>6</option><option>7</option><option>9</option><option>10</option>
+                  </select>
+
+                <button id="add-keyword">Show</button>
+              </div>
+
+              <div class="chart-container">
+                <canvas id="keyword-canvas" height="200"></canvas>
+              </div>
             </div>
+          </div>
         </section>
+
 
         <!-- Similarity Analysis Section -->
         <section id="similarity" class="section">

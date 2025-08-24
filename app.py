@@ -138,67 +138,103 @@ def search():
 
     return jsonify(results)
 
-
 @app.route("/keywords/by_year", methods=["POST"])
 def keywords_by_year():
-    data = request.get_json()
-    entity_type = data.get("type")  # "member" ή "party"
-    entity_name = data.get("name")
+    data = request.get_json(force=True, silent=True) or {}
+    entity_type = (data.get("type") or "").strip().lower()   # "overall" | "member" | "party"
+    entity_name = (data.get("name") or "").strip()
 
-    if not entity_type or not entity_name:
+    if not entity_type:
         return jsonify({"error": "Missing parameters"}), 400
-
-    # Define table & filed based on entity type
-    if entity_type == "member":
-        table = "member_keywords_by_year"
-        id_field = "member_id"
-        lookup_table = "members"
-        lookup_field = "full_name"
-    elif entity_type == "party":
-        table = "party_keywords_by_year"
-        id_field = "party_id"
-        lookup_table = "parties"
-        lookup_field = "name"
-    else:
-        return jsonify({"error": "Invalid entity type"}), 400
 
     try:
         conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
 
-        # Use normalized string for search
+        if entity_type == "overall":
+            # Συνολικά keywords ανά έτος από όλες τις ομιλίες (άθροιση score)
+            cursor.execute("""
+                SELECT s.year, sk.keyword, SUM(sk.score) AS score
+                FROM speech_keywords sk
+                JOIN speeches s ON s.id = sk.speech_id
+                GROUP BY s.year, sk.keyword
+                ORDER BY s.year ASC, score DESC
+            """)
+            rows = cursor.fetchall()
+            conn.close()
+            result = {}
+            for year, keyword, score in rows:
+                y = str(year if not isinstance(year, bytes) else int.from_bytes(year, "little"))
+                result.setdefault(y, []).append({"keyword": keyword, "score": round(float(score), 4)})
+            return jsonify(result)
+
+        # --- member / party ---
+        if entity_type == "member":
+            table = "member_keywords_by_year"
+            id_field = "member_id"
+            lookup_table = "members"
+            lookup_field = "full_name"
+        elif entity_type == "party":
+            table = "party_keywords_by_year"
+            id_field = "party_id"
+            lookup_table = "parties"
+            lookup_field = "name"
+        else:
+            return jsonify({"error": "Invalid entity type"}), 400
+
+        if not entity_name:
+            conn.close()
+            return jsonify({"error": "Missing parameters"}), 400
+
         entity_id = find_entity_id_by_name(conn, lookup_table, lookup_field, entity_name)
         if entity_id is None:
+            conn.close()
             return jsonify({"error": f"{entity_type.title()} not found"}), 404
 
-        # Πάρε όλα τα keywords ανά έτος και score
-        cursor = conn.cursor()
         cursor.execute(f"""
             SELECT year, keyword, score
             FROM {table}
             WHERE {id_field} = ?
             ORDER BY year ASC, score DESC
         """, (entity_id,))
-
         rows = cursor.fetchall()
         conn.close()
 
-        if not rows:
-            return jsonify({"error": "No data found"}), 404
-
-        # Group by year
         result = {}
         for year, keyword, score in rows:
-            year = str(int.from_bytes(year, byteorder="little")) if isinstance(year, bytes) else str(year)
-
-            if year not in result:
-                result[year] = []
-            result[year].append({"keyword": keyword, "score": round(score, 4)})
-
+            y = str(year if not isinstance(year, bytes) else int.from_bytes(year, "little"))
+            result.setdefault(y, []).append({"keyword": keyword, "score": round(float(score), 4)})
         return jsonify(result)
 
     except Exception as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
+@app.route("/entities", methods=["GET"])
+def list_entities():
+    etype = (request.args.get("type") or "").strip().lower()
+    if etype not in {"overall", "member", "party"}:
+        return jsonify({"error": "Invalid type"}), 400
+
+    if etype == "overall":
+        return jsonify({"items": []})
+
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+
+        if etype == "member":
+            cursor.execute("SELECT full_name FROM members ORDER BY full_name COLLATE NOCASE LIMIT 20")
+        else:  # party
+            cursor.execute("SELECT name FROM parties ORDER BY name COLLATE NOCASE LIMIT 20")
+
+        rows = [r[0] for r in cursor.fetchall()]
+        conn.close()
+
+        return jsonify({"items": rows})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Database error: {e}"}), 500
 
 @app.route("/similarity", methods=["POST"])
 def similarity():
