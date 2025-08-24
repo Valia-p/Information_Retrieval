@@ -113,23 +113,10 @@
             <div class="container">
                 <h2>Parliament Member Similarity</h2>
                 <p>Discover which parliament members have similar speech patterns and content</p>
-                <div class="similarity-controls">
-                    <div class="filter-group">
-                        <label for="similarity-mp">Select Parliament Member:</label>
-                        <select id="similarity-mp">
-                            <option value="">Select a parliament member</option>
-                            <!-- Will be populated dynamically -->
-                        </select>
+                <div class="tracking-controls">
+                        <input type="text" id="name-input" placeholder="Enter member to find similar ones">
+                        <button id="add-name">Add</button>
                     </div>
-                    <div class="filter-group">
-                        <label for="similarity-metric">Similarity Metric:</label>
-                        <select id="similarity-metric">
-                            <option value="content">Content Similarity</option>
-                            <option value="style">Style Similarity</option>
-                            <option value="topics">Topic Distribution</option>
-                        </select>
-                    </div>
-                </div>
                 <div class="similarity-visualization">
                     <div class="chart-container">
                         <canvas id="similarity-chart"></canvas>
@@ -181,6 +168,7 @@
     </main>
     <script src="static/search.js"></script>
     <script src="static/keywords.js"></script>
+    <script src="static/similarity.js"></script>
 
 <!--<script>-->
 <!--&lt;!&ndash;    const searchButton = document.getElementById("searchBtn");&ndash;&gt;-->
