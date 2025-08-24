@@ -1,5 +1,8 @@
 import pandas as pd
 import math
+
+from flask import jsonify
+
 from tf_idf import load_inverse_index_and_docs
 from query_processing import remove_accents
 
@@ -32,17 +35,17 @@ def compute_tf_idf_per_speech(inverse_index, df):
     return doc_vectors
 
 
-def create_member_catalogue():
+def create_member_catalogue(df):
     """
     Creation of inverse index catalogue that maps members to a list of speeches (docs) of theirs.
     member -> {doc1, doc2, ...}
     """
-    df = pd.read_csv("cleaned_data.csv")
     member_speeches = {}
 
     for idx, row in df.iterrows():
         doc_id = row.get("document_id")
-        member = row.get("member_name", "").strip()
+        # member = row.get("member_name", "").strip()
+        member = str(row.get("member_name", "") or "").strip()
 
         if member not in member_speeches:
             member_speeches[member] = []
@@ -88,6 +91,7 @@ def compute_member_similarity(member_vectors, query, topk):
     and the wanted member (query).
     """
     if query not in member_vectors:
+        print("not in members")
         return {}
 
     mem_vec = member_vectors[query]
@@ -108,15 +112,19 @@ def compute_member_similarity(member_vectors, query, topk):
         similarities[member] = similarity
 
     top = sorted(similarities.items(), key=lambda x: x[1], reverse=True)[:topk]
-    return top
+    return [{"member": member, "score": score} for member, score in top]
 
 
-inverse_index, df = load_inverse_index_and_docs()
-member_speeches = create_member_catalogue()
-vectors = compute_tf_idf_per_speech(inverse_index, df)
-member_vectors = compute_tf_idf_per_member(member_speeches, vectors, inverse_index)
+def run_all_part3_tasks(data, inverse_index, df):
+    member_speeches = create_member_catalogue(df)
+    vectors = compute_tf_idf_per_speech(inverse_index, df)
+    member_vectors = compute_tf_idf_per_member(member_speeches, vectors, inverse_index)
+    topk = compute_member_similarity(member_vectors, data, 5)
 
-query = "Σακοράφα ηλία Σοφια"
-cleaned_query = remove_accents(query.strip().lower())
-topk = compute_member_similarity(member_vectors, cleaned_query, 5)
-print(topk)
+    return topk
+
+# topk = run_all_part3_tasks("αλευρας νικολαου ιωαννης")
+
+# Δουλεύει με έτοιμο query όπως το παρακάτω. Μένει να το κάνουμε να παίρνει query από την ιστοσελίδα.
+# query = "αλευρας νικολαου ιωαννης"
+# cleaned_query = remove_accents(query.strip().lower())
