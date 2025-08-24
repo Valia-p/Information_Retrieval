@@ -8,6 +8,7 @@ from create_database import create_schema, populate_data, is_part2_already_compu
 from LSI import build_tfidf_matrix, perform_lsi, clustering_lsi_docs
 import sqlite3
 import os
+from part3 import run_all_part3_tasks
 
 DB_NAME = "parliament.db"
 CSV_FILE = "cleaned_data.csv"
@@ -197,6 +198,19 @@ def keywords_by_year():
 
     except Exception as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
+
+
+@app.route("/similarity", methods=["POST"])
+def similarity():
+    data = request.get_json()
+    entity_name = data.get("member", "").strip()
+
+    if not entity_name:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    topk = run_all_part3_tasks(entity_name, inverse_index, df)
+
+    return jsonify(topk)
 
 
 if __name__ == "__main__":
