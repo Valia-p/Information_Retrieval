@@ -124,7 +124,7 @@ def run_all_part3_tasks(data, inverse_index, df):
     return topk
 
 # topk = run_all_part3_tasks("αλευρας νικολαου ιωαννης")
-
-# Δουλεύει με έτοιμο query όπως το παρακάτω. Μένει να το κάνουμε να παίρνει query από την ιστοσελίδα.
-# query = "αλευρας νικολαου ιωαννης"
-# cleaned_query = remove_accents(query.strip().lower())
+# print(topk)
+# # Δουλεύει με έτοιμο query όπως το παρακάτω. Μένει να το κάνουμε να παίρνει query από την ιστοσελίδα.
+# # query = "αλευρας νικολαου ιωαννης"
+# # cleaned_query = remove_accents(query.strip().lower())

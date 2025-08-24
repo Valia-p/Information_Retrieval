@@ -61,9 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
        });
        //-------------------------------------
 
-<!--        // Perform search with filters-->
-<!--        const results = performSearch(searchTerm, dateRange, party, mp);-->
-<!--        // Display results-->
-<!--        displaySearchResults(results);-->
+// <!-- >       // Perform search with filters-->
+// <!--  >     const results = performSearch(searchTerm, dateRange, party, mp);-->
+// <!--        // Display results-->
+// <!--        displaySearchResults(results);-->
    });
 });
