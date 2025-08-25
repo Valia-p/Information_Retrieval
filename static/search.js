@@ -1,69 +1,124 @@
-// Κάνει ένα απλό search χωρίς φίλτρα προς στιγμήν
-    // Search functionality for Hellenic Parliament Speech Analysis Platform
+// static/search.js
+document.addEventListener('DOMContentLoaded', function () {
+  const searchForm      = document.getElementById('search-form');
+  const searchInput     = document.getElementById('search-input');
+  const searchResults   = document.getElementById('search-results');
+  const dateRangeFilter = document.getElementById('date-range');
+  const partyFilter     = document.getElementById('party-filter');
+  const mpFilter        = document.getElementById('mp-filter');
 
-document.addEventListener('DOMContentLoaded', function() {
-   const searchForm = document.getElementById('search-form');
-   const searchInput = document.getElementById('search-input');
-   const searchResults = document.getElementById('search-results');
-   const dateRangeFilter = document.getElementById('date-range');
-   const partyFilter = document.getElementById('party-filter');
-   const mpFilter = document.getElementById('mp-filter');
+  if (!searchForm || !searchInput || !searchResults) return;
 
-   if (!searchForm || !searchResults) return;
-    // Search form submission handler
-   searchForm.addEventListener('submit', function(e) {
-       e.preventDefault();
-       const searchTerm = searchInput.value.trim().toLowerCase();
-       if (searchTerm === '') {
-           searchResults.innerHTML = '<p class="placeholder-text">Enter search terms above to see results</p>';
-           return;
-       }
+  // -------------------------
+  // Helpers
+  // -------------------------
+  function escapeRegExp(str){return str.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+  function highlight(text, query){
+    const parts=(query||"").trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return text;
+    const rx = new RegExp("(" + parts.map(escapeRegExp).join("|") + ")", "gi");
+    return text.replace(rx, "<mark>$1</mark>");
+  }
 
-       // Get filter values
-       const dateRange = dateRangeFilter.value;
-       const party = partyFilter.value;
-       const mp = mpFilter.value;
+  async function populateSelect(selectEl, url, allLabel) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const items = Array.isArray(data.items) ? data.items : [];
+      // reset & add "All"
+      selectEl.innerHTML = "";
+      const allOpt = document.createElement('option');
+      allOpt.value = "all";
+      allOpt.textContent = allLabel;
+      selectEl.appendChild(allOpt);
+      // add items
+      for (const name of items) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        selectEl.appendChild(opt);
+      }
+    } catch (err) {
+      console.error('populateSelect error:', err);
+      // fallback – τουλάχιστον να υπάρχει το "All"
+      selectEl.innerHTML = `<option value="all">${allLabel}</option>`;
+    }
+  }
 
-       //------------από Βάλια-----------
-       fetch("/search", {
-           method: "POST",
-           headers: {
-               "Content-Type": "application/json"
-           },
-           body: JSON.stringify({ query: searchTerm })
-       })
-       .then(response => response.json())
-       .then(data => {
-           searchResults.innerHTML = "";
-           if (data.length === 0) {
-               searchResults.innerHTML = "<p>No results found.</p>";
-           } else {
-               console.log(data);
-               data.forEach(item => {
-                   const div = document.createElement("div");
-                   div.classList.add("result");
-                   div.innerHTML = `
-                       <h3>${item.member} (${item.party}) - ${item.date}</h3>
-                       <p><strong>Score:</strong> ${item.score}</p>
-                       <p>${item.speech}</p>
-                   `;
+  // Γέμισμα dropdowns από DB
+  populateSelect(partyFilter, '/entities?type=party',  'All Parties');
+  populateSelect(mpFilter,    '/entities?type=member', 'All Members');
 
-                   div.style.backgroundColor = "white";
-                   div.style.padding = "var(--spacing-lg)";
-                   div.style.margin = "5px";
-                   div.style.borderRadius = "var(--radius-md)";
-                   div.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.1)";
-                   div.style.minHeight = "200px";
+  // Αν αλλάξει party/member/date και υπάρχει query, ξανατρέξε το search
+  function reRunIfQueryExists() {
+    const q = (searchInput.value || '').trim();
+    if (q) searchForm.dispatchEvent(new Event('submit', {cancelable:true}));
+  }
+  dateRangeFilter.addEventListener('change', reRunIfQueryExists);
+  partyFilter.addEventListener('change', reRunIfQueryExists);
+  mpFilter.addEventListener('change', reRunIfQueryExists);
 
-                   searchResults.appendChild(div);
-               });
-           }
-       });
-       //-------------------------------------
+  // -------------------------
+  // Submit handler
+  // -------------------------
+  searchForm.addEventListener('submit', function (e) {
+    e.preventDefault();
 
-// <!-- >       // Perform search with filters-->
-// <!--  >     const results = performSearch(searchTerm, dateRange, party, mp);-->
-// <!--        // Display results-->
-// <!--        displaySearchResults(results);-->
-   });
+    const query     = (searchInput.value || '').trim();
+    const dateRange = dateRangeFilter.value; // "all" ή "YYYY-YYYY"
+    const party     = partyFilter.value;     // "all" ή πλήρες όνομα κόμματος
+    const mp        = mpFilter.value;        // "all" ή πλήρες όνομα βουλευτή
+
+    if (!query) {
+      searchResults.innerHTML = '<p class="placeholder-text">Enter search terms above to see results</p>';
+      return;
+    }
+
+    searchResults.innerHTML = '<p class="placeholder-text">Searching…</p>';
+
+    fetch("/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, dateRange, party, mp })
+    })
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      // clear box
+      searchResults.innerHTML = "";
+
+      if (!Array.isArray(data) || data.length === 0) {
+        searchResults.innerHTML = "<p>No results found.</p>";
+        return;
+      }
+
+      // render results
+      for (const item of data) {
+        const card = document.createElement('div');
+        card.style.background = "#fff";
+        card.style.borderRadius = "6px";
+        card.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)";
+        card.style.padding = "16px";
+        card.style.margin = "10px 0";
+
+        card.innerHTML = `
+          <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">
+            <h3 style="margin:0;">${item.member}</h3>
+            <span>(${item.party})</span>
+            <span style="opacity:.7;">– ${item.date}</span>
+            <span style="margin-left:auto; font-size:.9rem; opacity:.8;">Score: ${item.score}</span>
+          </div>
+          <p style="margin-top:8px;">${highlight(item.speech, query)}</p>
+        `;
+        searchResults.appendChild(card);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      searchResults.innerHTML = "<p>Error while searching.</p>";
+    });
+  });
 });

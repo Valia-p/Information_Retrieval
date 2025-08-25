@@ -75,59 +75,94 @@ def index():
 
 @app.route("/search", methods=["POST"])
 def search():
-    data = request.get_json()
-    query = data.get("query", "").strip()
+    data = request.get_json(force=True) or {}
+    raw_query = (data.get("query") or "").strip()
+    date_range = (data.get("dateRange") or "all").strip().lower()   # "all" ή "YYYY-YYYY"
+    party_name = (data.get("party") or "all").strip()
+    mp_name    = (data.get("mp") or "all").strip()
 
-    if not query:
+    if not raw_query:
         return jsonify([])
 
-    # Process user query (normalize, lowercase, stem, etc.)
-    tokens = process_query(query)
+    tokens = [t for t in process_query(raw_query) if t]
+    if not tokens:
+        return jsonify([])
 
-    # Get TF-IDF scores for speeches that contain any of the keywords
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    # Φίλτρα που εφαρμόζονται στον πίνακα speeches
+    where_sql = []
+    params_base = []
+
+    # dateRange "YYYY-YYYY"
+    if date_range != "all":
+        try:
+            y1, y2 = date_range.split("-")
+            y1, y2 = int(y1), int(y2)
+            where_sql.append("s.year BETWEEN ? AND ?")
+            params_base.extend([y1, y2])
+        except Exception:
+            pass
+
+    # party
+    if party_name and party_name.lower() != "all":
+        where_sql.append("p.name = ?")
+        params_base.append(party_name)
+
+    # member
+    if mp_name and mp_name.lower() != "all":
+        where_sql.append("m.full_name = ?")
+        params_base.append(mp_name)
+
+    where_clause = ""
+    if where_sql:
+        where_clause = " AND " + " AND ".join(where_sql)
+
     from collections import defaultdict
     scores = defaultdict(float)
 
-    conn = sqlite3.connect("parliament.db")
-    cursor = conn.cursor()
+    for tok in tokens:
+        sql = f"""
+        SELECT sk.speech_id, sk.score
+        FROM speech_keywords sk
+        JOIN speeches s ON s.id = sk.speech_id
+        JOIN members  m ON m.id = s.member_id
+        JOIN parties  p ON p.id = s.party_id
+        WHERE (sk.keyword = ? OR sk.keyword LIKE ?){where_clause}
+        """
+        params = [tok, f"{tok}%"] + params_base
 
-    for token in tokens:
-        cursor.execute("""
-            SELECT speech_id, score
-            FROM speech_keywords
-            WHERE keyword = ?
-        """, (token,))
-        for speech_id, score in cursor.fetchall():
-            scores[speech_id] += score  # sum score if multiple keywords match
+        for sid, sc in cursor.execute(sql, params):
+            scores[sid] += float(sc)
 
     if not scores:
         conn.close()
         return jsonify([])
 
-    # Get top 5 speeches by score
-    top_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:5]
-    doc_ids = [doc_id for doc_id, _ in top_docs]
+    # Top-N αποτελέσματα που θα εμφανιστούν
+    top_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:10]
+    speech_ids = [sid for sid, _ in top_docs]
     scores_dict = dict(top_docs)
 
-    placeholders = ",".join("?" for _ in doc_ids)
+    placeholders = ",".join("?" for _ in speech_ids)
     cursor.execute(f"""
-        SELECT s.doc_id, s.speech, s.sitting_date,
-               m.full_name, p.name
+        SELECT s.id, s.doc_id, s.speech, s.sitting_date, m.full_name, p.name
         FROM speeches s
         JOIN members m ON s.member_id = m.id
         JOIN parties p ON s.party_id = p.id
-        WHERE s.doc_id IN ({placeholders})
-    """, tuple(doc_ids))
-
+        WHERE s.id IN ({placeholders})
+    """, tuple(speech_ids))
     rows = cursor.fetchall()
     conn.close()
 
+    # Σύνθεση απάντησης
     results = []
-    for doc_id, speech, date, member, party in rows:
-        excerpt = speech[:300] + "..." if len(speech) > 300 else speech
+    for sid, doc_id, speech, date, member, party in rows:
+        excerpt = speech[:600] + "..." if len(speech) > 600 else speech
         results.append({
             "doc_id": doc_id,
-            "score": round(scores_dict.get(doc_id, 0.0), 4),
+            "score": round(scores_dict.get(sid, 0.0), 4),
             "speech": excerpt,
             "member": member,
             "party": party,
@@ -135,8 +170,29 @@ def search():
         })
 
     results.sort(key=lambda x: -x["score"])
-
     return jsonify(results)
+
+
+@app.route("/entities", methods=["GET"])
+def list_entities():
+    etype = (request.args.get("type") or "").strip().lower()
+    if etype not in {"overall", "member", "party"}:
+        return jsonify({"error": "Invalid type"}), 400
+    if etype == "overall":
+        return jsonify({"items": []})
+
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cur = conn.cursor()
+        if etype == "member":
+            cur.execute("SELECT full_name FROM members ORDER BY full_name COLLATE NOCASE")
+        else:
+            cur.execute("SELECT name FROM parties ORDER BY name COLLATE NOCASE")
+        items = [r[0] for r in cur.fetchall()]
+        conn.close()
+        return jsonify({"items": items})
+    except Exception as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
 
 @app.route("/keywords/by_year", methods=["POST"])
 def keywords_by_year():
@@ -209,32 +265,6 @@ def keywords_by_year():
     except Exception as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
-@app.route("/entities", methods=["GET"])
-def list_entities():
-    etype = (request.args.get("type") or "").strip().lower()
-    if etype not in {"overall", "member", "party"}:
-        return jsonify({"error": "Invalid type"}), 400
-
-    if etype == "overall":
-        return jsonify({"items": []})
-
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-
-        if etype == "member":
-            cursor.execute("SELECT full_name FROM members ORDER BY full_name COLLATE NOCASE LIMIT 20")
-        else:  # party
-            cursor.execute("SELECT name FROM parties ORDER BY name COLLATE NOCASE LIMIT 20")
-
-        rows = [r[0] for r in cursor.fetchall()]
-        conn.close()
-
-        return jsonify({"items": rows})
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Database error: {e}"}), 500
 
 @app.route("/similarity", methods=["POST"])
 def similarity():

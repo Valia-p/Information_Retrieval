@@ -37,42 +37,41 @@
                             <input type="text" id="search-input" placeholder="Enter keywords or phrases...">
                             <button type="submit">Search</button>
                         </div>
-                        <div class="search-filters">
-                            <div class="filter-group">
+                            <div class="search-filters">
+                              <!-- Date -->
+                              <div class="filter-group" style="flex:1 1 320px; max-width: 420px;">
                                 <label for="date-range">Date Range:</label>
-                                <select id="date-range">
-                                    <option value="all">All Time (1989-2020)</option>
-                                    <option value="1989-1995">1989-1995</option>
-                                    <option value="1996-2000">1996-2000</option>
-                                    <option value="2001-2005">2001-2005</option>
-                                    <option value="2006-2010">2006-2010</option>
-                                    <option value="2011-2015">2011-2015</option>
-                                    <option value="2016-2020">2016-2020</option>
+                                <select id="date-range" style="width:100%;">
+                                  <option value="all">All Time (1989-2020)</option>
+                                  <option value="1989-1995">1989-1995</option>
+                                  <option value="1996-2000">1996-2000</option>
+                                  <option value="2001-2005">2001-2005</option>
+                                  <option value="2006-2010">2006-2010</option>
+                                  <option value="2011-2015">2011-2015</option>
+                                  <option value="2016-2020">2016-2020</option>
                                 </select>
-                            </div>
-                            <div class="filter-group">
+                              </div>
+
+                              <!-- Party -->
+                              <div class="filter-group" style="flex:1 1 320px; max-width: 420px;">
                                 <label for="party-filter">Political Party:</label>
-                                <select id="party-filter">
-                                    <option value="all">All Parties</option>
-                                    <option value="nd">New Democracy</option>
-                                    <option value="pasok">PASOK</option>
-                                    <option value="syriza">SYRIZA</option>
-                                    <option value="kke">KKE</option>
-                                    <option value="other">Other Parties</option>
+                                <select id="party-filter" style="width:100%;">
+                                  <option value="all">All Parties</option>
                                 </select>
-                            </div>
-                            <div class="filter-group">
+                              </div>
+
+                              <!-- Member -->
+                              <div class="filter-group" style="flex:1 1 320px; max-width: 420px;">
                                 <label for="mp-filter">Parliament Member:</label>
-                                <select id="mp-filter">
-                                    <option value="all">All Members</option>
-                                    <!-- This will be populated dynamically with JavaScript -->
+                                <select id="mp-filter" style="width:100%;">
+                                  <option value="all">All Members</option>
                                 </select>
+                              </div>
                             </div>
-                        </div>
+
                     </form>
                 </div>
                 <div class="search-results" id="search-results">
-                    <!-- Search results will be displayed here -->
                     <p class="placeholder-text">Enter search terms above to see results</p>
                 </div>
             </div>
