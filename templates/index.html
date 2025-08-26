@@ -112,23 +112,70 @@
           </div>
         </section>
 
-
-        <!-- Similarity Analysis Section -->
+        <!-- Similarity Section -->
         <section id="similarity" class="section">
-            <div class="container">
-                <h2>Parliament Member Similarity</h2>
-                <p>Discover which parliament members have similar speech patterns and content</p>
-                <div class="tracking-controls">
-                        <input type="text" id="name-input" placeholder="Enter member to find similar ones">
-                        <button id="add-name">Add</button>
-                    </div>
-                <div class="similarity-visualization">
-                    <div class="chart-container">
-                        <canvas id="similarity-chart"></canvas>
-                    </div>
+          <div class="container">
+            <h2>Parliament Member Similarity</h2>
+            <p>Find members with the most similar speech patterns.</p>
+
+            <!-- Controls -->
+            <div class="panel">
+              <div class="grid-3">
+                <div class="control">
+                  <label for="member-select">Choose a member (dropdown)</label>
+                  <select id="member-select">
+                    <option value="" selected disabled>Loading members…</option>
+                  </select>
                 </div>
+
+                <div class="control">
+                  <label for="name-input">…or type a name</label>
+                  <input list="member-list" id="name-input" placeholder="Start typing a member…">
+                  <datalist id="member-list"></datalist>
+                  <small class="muted">Tip: if both are filled, dropdown wins.</small>
+                </div>
+
+                <div class="control">
+                  <label for="sim-topk">Top-K neighbors</label>
+                  <select id="sim-topk">
+                    <option>5</option><option selected>10</option>
+                  </select>
+                  <button id="btn-show" class="primary">Show Similar</button>
+                </div>
+              </div>
             </div>
+
+            <!-- Chart -->
+            <div class="card">
+              <div class="chart-container">
+                <canvas id="similarity-chart" height="200"></canvas>
+              </div>
+            </div>
+
+            <!-- Table of neighbors -->
+            <div class="card">
+              <div class="card-header">
+                <h3 id="neighbors-title" class="card-title">Neighbors</h3>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th style="width:64px">#</th>
+                      <th>Member</th>
+                      <th style="width:140px">Similarity</th>
+                    </tr>
+                  </thead>
+                  <tbody id="neighbors-tbody">
+                    <tr><td colspan="3" class="muted" style="text-align:center">No data yet</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
         </section>
+
 
         <!-- Thematic Analysis Section -->
         <section id="themes" class="section">

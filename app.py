@@ -4,11 +4,13 @@ from query_processing import process_query
 from data_cleaning import process_dataset
 from inverted_index import create_inverse_index_catalogue
 from part2 import run_all_part2_tasks, find_entity_id_by_name
+from part3 import compute_and_store_all_pairs,is_part3_already_computed
 from create_database import create_schema, populate_data, is_part2_already_computed
 from LSI import build_tfidf_matrix, perform_lsi, clustering_lsi_docs
 import sqlite3
 import os
-from part3 import run_all_part3_tasks
+import unicodedata
+
 
 DB_NAME = "parliament.db"
 CSV_FILE = "cleaned_data.csv"
@@ -45,6 +47,19 @@ if not is_part2_already_computed():
 else:
     print("Keyword analysis already exists. Skipping part2 processing.")
 
+if not is_part3_already_computed():
+    try:
+        print("Computing member–member similarities...")
+        # Ρύθμιση thresholds:
+        # min_score=0.05
+        # topk_per_member=None για πλήρη κάλυψη
+        stored = compute_and_store_all_pairs(min_score=0.05, topk_per_member=None)
+        print(f"Stored/updated {stored} pairs in 'member_similarity_pairs'.")
+    except Exception as e:
+        print(f"Error while computing member similarities: {e}")
+else:
+    print("Member–member similarities already exist. Skipping part3 computations.")
+
 # Files needed for LSI
 if not os.path.exists(TFIDF_FILE) or not os.path.exists(DOC_IDS_FILE):
     build_tfidf_matrix()
@@ -60,6 +75,32 @@ if not os.path.exists(CLUSTERS_FILE):
     clustering_lsi_docs()
 else:
     print("Clustering already exists. Skipping...")
+
+
+def _strip_accents(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+def _norm(s):
+    return _strip_accents((s or "").strip().lower())
+
+def find_member_id_fuzzy(conn, name: str):
+    if not name: return None
+    cur = conn.cursor()
+    # exact
+    cur.execute("SELECT id FROM members WHERE full_name = ?", (name.strip(),))
+    r = cur.fetchone()
+    if r: return r[0]
+    # case-insensitive
+    cur.execute("SELECT id FROM members WHERE full_name LIKE ? COLLATE NOCASE", (name.strip(),))
+    r = cur.fetchone()
+    if r: return r[0]
+    # normalized
+    nq = _norm(name)
+    cur.execute("SELECT id, full_name FROM members")
+    for mid, nm in cur.fetchall():
+        nn = _norm(nm)
+        if nn == nq or nn.startswith(nq) or nq in nn:
+            return mid
+    return None
 
 # Flask App
 app = Flask(__name__)
@@ -176,23 +217,33 @@ def search():
 @app.route("/entities", methods=["GET"])
 def list_entities():
     etype = (request.args.get("type") or "").strip().lower()
-    if etype not in {"overall", "member", "party"}:
-        return jsonify({"error": "Invalid type"}), 400
-    if etype == "overall":
-        return jsonify({"items": []})
+    full  = (request.args.get("full") or "0").lower() in {"1","true","yes"}
+    if etype not in {"overall","member","party"}:
+        return jsonify({"error":"Invalid type"}), 400
 
     try:
-        conn = sqlite3.connect(DB_NAME)
-        cur = conn.cursor()
-        if etype == "member":
-            cur.execute("SELECT full_name FROM members ORDER BY full_name COLLATE NOCASE")
-        else:
-            cur.execute("SELECT name FROM parties ORDER BY name COLLATE NOCASE")
-        items = [r[0] for r in cur.fetchall()]
+        conn = sqlite3.connect(DB_NAME); cur = conn.cursor()
+        if etype == "overall":
+            items = []
+        elif etype == "member":
+            if full:
+                cur.execute("SELECT id, full_name FROM members ORDER BY full_name COLLATE NOCASE")
+                items = [{"id": r[0], "name": r[1]} for r in cur.fetchall()]
+            else:
+                cur.execute("SELECT full_name FROM members ORDER BY full_name COLLATE NOCASE")
+                items = [r[0] for r in cur.fetchall()]
+        else:  # party
+            if full:
+                cur.execute("SELECT id, name FROM parties ORDER BY name COLLATE NOCASE")
+                items = [{"id": r[0], "name": r[1]} for r in cur.fetchall()]
+            else:
+                cur.execute("SELECT name FROM parties ORDER BY name COLLATE NOCASE")
+                items = [r[0] for r in cur.fetchall()]
         conn.close()
         return jsonify({"items": items})
     except Exception as e:
         return jsonify({"error": f"Database error: {e}"}), 500
+
 
 @app.route("/keywords/by_year", methods=["POST"])
 def keywords_by_year():
@@ -266,17 +317,72 @@ def keywords_by_year():
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 
-@app.route("/similarity", methods=["POST"])
-def similarity():
-    data = request.get_json()
-    entity_name = data.get("member", "").strip()
+@app.route("/similarity/member", methods=["GET"])
+def similarity_member_endpoint():
+    member_id = (request.args.get("id") or "").strip()
+    name      = (request.args.get("name") or "").strip()
+    topk      = int(request.args.get("k") or 10)
 
-    if not entity_name:
-        return jsonify({"error": "Missing parameters"}), 400
+    conn = sqlite3.connect(DB_NAME); cur = conn.cursor()
 
-    topk = run_all_part3_tasks(entity_name, inverse_index, df)
+    # Βρες το member_id
+    if member_id:
+        try:
+            mid = int(member_id)
+        except ValueError:
+            conn.close(); return jsonify({"error":"Invalid member id."}), 400
+        cur.execute("SELECT full_name FROM members WHERE id = ?", (mid,))
+        r = cur.fetchone()
+        if not r:
+            conn.close(); return jsonify({"error": f"Member id {mid} not found."}), 404
+        display_name = r[0]
+    else:
+        if not name:
+            conn.close(); return jsonify({"error":"Provide member id or name."}), 400
+        mid = find_member_id_fuzzy(conn, name)
+        if not mid:
+            conn.close(); return jsonify({"error": f"Member '{name}' not found."}), 404
+        cur.execute("SELECT full_name FROM members WHERE id = ?", (mid,))
+        display_name = cur.fetchone()[0]
 
-    return jsonify(topk)
+    # Φέρε γείτονες με βάση το member_id
+    cur.execute("""
+        SELECT CASE WHEN member1_id=? THEN member2_id ELSE member1_id END AS other_id, score
+        FROM member_similarity_pairs
+        WHERE member1_id=? OR member2_id=?
+        ORDER BY score DESC
+        LIMIT ?
+    """, (mid, mid, mid, topk))
+    rows = cur.fetchall()
+
+    if not rows:
+        conn.close()
+        return jsonify({"name": display_name, "neighbors": []})
+
+    other_ids = [r[0] for r in rows]
+    placeholders = ",".join("?" for _ in other_ids)
+    cur.execute(f"SELECT id, full_name FROM members WHERE id IN ({placeholders})", other_ids)
+    name_map = {rid: nm for rid, nm in cur.fetchall()}
+    conn.close()
+
+    neighbors = [{"member": name_map.get(oid, str(oid)), "score": float(sc)} for oid, sc in rows]
+    return jsonify({"name": display_name, "neighbors": neighbors})
+
+@app.route("/similarity/top_pairs", methods=["GET"])
+def similarity_top_pairs():
+    k = int(request.args.get("limit") or 50)
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("""
+      SELECT m1.full_name, m2.full_name, sp.score
+      FROM member_similarity_pairs sp
+      JOIN members m1 ON m1.id = sp.member1_id
+      JOIN members m2 ON m2.id = sp.member2_id
+      ORDER BY sp.score DESC LIMIT ?
+    """, (k,))
+    rows = [{"member1": a, "member2": b, "score": round(s, 4)} for a, b, s in cur.fetchall()]
+    conn.close()
+    return jsonify({"pairs": rows})
 
 
 if __name__ == "__main__":

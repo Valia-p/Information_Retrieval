@@ -57,6 +57,15 @@ def create_schema(conn):
         PRIMARY KEY (party_id, year, keyword),
         FOREIGN KEY (party_id) REFERENCES parties(id)
     );
+    
+    CREATE TABLE IF NOT EXISTS member_similarity_pairs (
+        member1_id INTEGER NOT NULL,
+        member2_id INTEGER NOT NULL,
+        score REAL NOT NULL,
+        PRIMARY KEY (member1_id, member2_id),  -- ΜΟΝΑΔΙΚΟ ΖΕΥΓΟΣ
+        FOREIGN KEY (member1_id) REFERENCES members(id),
+        FOREIGN KEY (member2_id) REFERENCES members(id)
+    );
     """)
     conn.commit()
 

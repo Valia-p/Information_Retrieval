@@ -1351,7 +1351,7 @@ footer .container {
         gap: var(--spacing-md);
     }
 }
-=======
+
 /* Main Styles for Hellenic Parliament Speech Analysis Website */
 
 /* Variables */
@@ -2705,3 +2705,32 @@ footer .container {
         gap: var(--spacing-md);
     }
 }
+
+/* Panels & Cards */
+.panel { background:#fff; border:1px solid #eaecef; border-radius:12px; padding:12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,.04); margin-bottom:1rem; }
+.card { background:#fff; border:1px solid #eaecef; border-radius:14px; box-shadow: 0 8px 24px rgba(0,0,0,.06); margin: 1rem 0; }
+.card-header { padding: .75rem 1rem; border-bottom:1px solid #f0f2f4; }
+.card-title { margin:0; font-size:1.05rem; font-weight:600; }
+.card .chart-container { padding: 1rem; }
+
+/* Grid controls */
+.grid-3 { display:grid; grid-template-columns: repeat(3, minmax(220px,1fr)); gap: 12px; }
+.control label { display:block; font-size:.9rem; color:#6b7280; margin-bottom:.35rem; }
+.control input, .control select { width:100%; padding:.55rem .6rem; border:1px solid #e2e8f0; border-radius:10px; outline:none; }
+.control .primary { margin-top:.5rem; padding:.55rem .9rem; border-radius:10px; border:0; background:#2196f3; color:#fff; font-weight:600; cursor:pointer; }
+.control .primary:hover { background:#1c86db; }
+.muted { color:#8a9099; }
+
+/* Tables */
+.table-wrap { overflow:auto; }
+.table { width:100%; border-collapse: collapse; }
+.table th, .table td { padding:.65rem .6rem; border-bottom:1px solid #f2f3f5; }
+.table thead th { position: sticky; top: 0; background:#fafafa; z-index:1; }
+.table tbody tr:nth-child(odd) { background:#fcfcfd; }
+.table tbody tr:hover { background:#f8fbff; }
+
+/* Badges & misc */
+.badge { display:inline-block; min-width:72px; text-align:center; padding:.25rem .5rem; border-radius:999px; background:#eef6ff; color:#1b74d0; font-weight:600; }
+.swap { color:#95a5a6; }
+.flex { display:flex; align-items:center; gap:.75rem; }
+
