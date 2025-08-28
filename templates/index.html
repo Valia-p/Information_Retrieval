@@ -177,50 +177,108 @@
         </section>
 
 
-        <!-- Thematic Analysis Section -->
-        <section id="themes" class="section">
-            <div class="container">
-                <h2>Thematic Analysis</h2>
-                <p>Explore dominant themes in parliamentary discourse using Latent Semantic Indexing</p>
-                <div class="theme-controls">
-                    <div class="filter-group">
-                        <label for="theme-period">Time Period:</label>
-                        <select id="theme-period">
-                            <option value="all">All Time (1989-2020)</option>
-                            <option value="1989-1995">1989-1995</option>
-                            <option value="1996-2000">1996-2000</option>
-                            <option value="2001-2005">2001-2005</option>
-                            <option value="2006-2010">2006-2010</option>
-                            <option value="2011-2015">2011-2015</option>
-                            <option value="2016-2020">2016-2020</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="theme-party">Political Party:</label>
-                        <select id="theme-party">
-                            <option value="all">All Parties</option>
-                            <option value="nd">New Democracy</option>
-                            <option value="pasok">PASOK</option>
-                            <option value="syriza">SYRIZA</option>
-                            <option value="kke">KKE</option>
-                            <option value="other">Other Parties</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="theme-visualization">
-                    <div class="chart-container">
-                        <canvas id="theme-chart"></canvas>
-                    </div>
-                    <div class="theme-clusters">
-                        <!-- Theme clusters will be displayed here -->
-                    </div>
-                </div>
-            </div>
-        </section>
+<!-- Thematic Analysis Section (ΜΟΝΟ αυτό το block) -->
+<section id="thematic" class="section">
+  <div class="container">
+    <h2>Thematic Analysis</h2>
+
+    <!-- Γράφημα: Κατανομή ομιλιών ανά cluster -->
+    <div class="card ta-accent">
+      <div class="card-header">
+        <h3 class="card-title">Κατανομή Ομιλιών ανά Cluster</h3>
+      </div>
+      <div class="card-body">
+        <div class="chart-container ta-chart-lg">
+          <canvas id="theme-chart" aria-label="Cluster Sizes"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid με clusters (γεμίζει από JS) -->
+    <div id="themes-list" class="theme-clusters"></div>
+
+    <!-- Panel λεπτομερειών επιλεγμένου cluster (γεμίζει από JS) -->
+    <div id="cluster-panel" class="card ta-info" style="display:none; margin-top: var(--spacing-lg);">
+      <div class="card-header">
+        <h3 class="card-title" id="cluster-panel-title">Cluster</h3>
+      </div>
+      <div class="card-body">
+        <!-- KPIs -->
+        <div class="ta-kpis">
+          <div class="ta-kpi">
+            <div class="ta-kpi-label">Μέγεθος</div>
+            <div class="ta-kpi-value" id="kpi-size">—</div>
+          </div>
+          <div class="ta-kpi">
+            <div class="ta-kpi-label">Χρονικό εύρος</div>
+            <div class="ta-kpi-value" id="kpi-dates">—</div>
+          </div>
+          <div class="ta-kpi">
+            <div class="ta-kpi-label">Μέση έκταση ομιλίας</div>
+            <div class="ta-kpi-value" id="kpi-avglen">—</div>
+          </div>
+          <div class="ta-kpi">
+            <div class="ta-kpi-label">Συνοχή (centroid)</div>
+            <div class="ta-kpi-value" id="kpi-cohesion">—</div>
+          </div>
+        </div>
+
+        <!-- Keywords -->
+        <div class="ta-section">
+          <div class="ta-section-title">Top Keywords</div>
+          <div id="cluster-panel-keywords" class="ta-keywords"></div>
+        </div>
+
+        <!-- Κατανομή κομμάτων -->
+        <div class="ta-section">
+          <div class="ta-section-title">Κατανομή κομμάτων</div>
+          <div id="ta-party-bars" class="ta-bars"></div>
+        </div>
+
+        <!-- Κορυφαίοι Βουλευτές -->
+        <div class="ta-section">
+          <div class="ta-section-title">Κορυφαίοι βουλευτές (κατά πλήθος ομιλιών)</div>
+          <ol id="ta-top-members" class="ta-toplist"></ol>
+        </div>
+
+        <!-- Αντιπροσωπευτική ομιλία -->
+        <div class="ta-section">
+          <div class="ta-section-title">Αντιπροσωπευτική ομιλία</div>
+          <div id="ta-repr" class="ta-repr">
+            <div class="ta-repr-meta" id="ta-repr-meta">—</div>
+            <div class="ta-repr-text" id="ta-repr-text"><em>—</em></div>
+          </div>
+        </div>
+
+        <!-- Δείγματα ομιλιών -->
+        <div class="ta-section">
+          <div class="ta-section-title">Ενδεικτικές ομιλίες</div>
+          <div class="table-wrap">
+            <table class="table" id="cluster-panel-table">
+              <thead>
+                <tr>
+                  <th style="width:64px">#</th>
+                  <th>Βουλευτής</th>
+                  <th>Κόμμα</th>
+                  <th style="width:160px">Ημερομηνία</th>
+                </tr>
+              </thead>
+              <tbody><!-- γεμίζει από JS --></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
     </main>
     <script src="static/search.js"></script>
     <script src="static/keywords.js"></script>
     <script src="static/similarity.js"></script>
+    <script src="static/themes.js"></script>
 
 <!--<script>-->
 <!--&lt;!&ndash;    const searchButton = document.getElementById("searchBtn");&ndash;&gt;-->
