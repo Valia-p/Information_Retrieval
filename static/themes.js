@@ -181,7 +181,7 @@
 
   function renderMembersChart(memberTop){ clearNode(els.topMembers); if(!memberTop||memberTop.length===0){ els.topMembers.innerHTML='<li class="muted">Δεν υπάρχουν δεδομένα</li>'; return; } const canvas=document.createElement('canvas'); canvas.height=Math.max(180, memberTop.length*26); els.topMembers.appendChild(canvas); const labels=memberTop.map(m=>m.member); const values=memberTop.map(m=>m.count); if(membersChart) membersChart.destroy(); membersChart=new Chart(canvas.getContext('2d'),{ type:'bar', data:{ labels, datasets:[{ label:'Ομιλίες', data:values }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true } } } }); }
 
-  function fillTable(samples){ const tbody=els.table?.querySelector('tbody'); if(!tbody) return; clearNode(tbody); if(!samples||samples.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='muted'; td.style.textAlign='center'; td.textContent='Δεν υπάρχουν δείγματα ομιλιών'; tr.appendChild(td); tbody.appendChild(tr); return; } samples.forEach((s,i)=>{ const tr=document.createElement('tr'); const tdIdx=document.createElement('td'); tdIdx.textContent=String(i+1); const tdMember=document.createElement('td'); tdMember.textContent=s.member||'—'; const tdParty=document.createElement('td'); tdParty.textContent=s.party||'—'; const tdDate=document.createElement('td'); tdDate.textContent=s.date||'—'; tr.appendChild(tdIdx); tr.appendChild(tdMember); tr.appendChild(tdParty); tr.appendChild(tdDate); tbody.appendChild(tr); }); }
+  function fillTable(samples){ const tbody=els.table?.querySelector('tbody'); if(!tbody) return; clearNode(tbody); if(!samples||samples.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='muted'; td.style.textAlign='center'; td.textContent='Δεν υπάρχουν δείγματα ομιλιών'; tr.appendChild(td); tbody.appendChild(tr); return; } samples.forEach((s,i)=>{ const tr=document.createElement('tr'); const tdIdx=document.createElement('td'); tdIdx.textContent=String(i+1); tdIdx.style.textAlign = 'center'; const tdMember=document.createElement('td'); tdMember.textContent=s.member||'—'; tdMember.style.paddingLeft="100px"; const tdParty=document.createElement('td'); tdParty.textContent=s.party||'—'; const tdDate=document.createElement('td'); tdDate.textContent=s.date||'—'; tdDate.style.textAlign = 'center'; tr.appendChild(tdIdx); tr.appendChild(tdMember); tr.appendChild(tdParty); tr.appendChild(tdDate); tbody.appendChild(tr); }); }
 
   // Embedding (LSI→PCA 2D) -----------------------------------
   function ensureEmbeddingCard(){
@@ -190,7 +190,7 @@
     card.innerHTML=`
       <div class="card-header"><h3 class="card-title">Χάρτης Θεμάτων (2D LSI-PCA)</h3></div>
       <div class="card-body">
-        <div class="muted" style="margin-bottom:.5rem">Κάθε σημείο είναι μια ομιλία· το χρώμα είναι το cluster. Κλικ για να ανοίξεις cluster.</div>
+        <div class="muted" style="margin-bottom:.5rem; margin-left:22px; margin-top:.5rem">Κάθε σημείο είναι μια ομιλία· το χρώμα είναι το cluster. Κλικ για να ανοίξεις cluster.</div>
         <div class="chart-container" style="height: 380px"><canvas id="embedding-chart" height="320" aria-label="2D topic map"></canvas></div>
       </div>`;
     els.section.querySelector('.container').insertBefore(card, els.list);
