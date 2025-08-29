@@ -17,11 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     neighborsBody.innerHTML = neigh.map((r,i)=>`
-      <tr>
-        <td style="text-align:center;">${i+1}</td>
-        <td style="padding-left:390px">${r.member}</td>
-        <td style="text-align:center"><span class="badge">${r.score.toFixed(4)}</span></td>
-      </tr>
+      <tr><td>${i+1}</td><td>${r.member}</td><td><span class="badge">${r.score.toFixed(4)}</span></td></tr>
     `).join("");
   }
   function renderChart(labels, scores){
