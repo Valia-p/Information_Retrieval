@@ -91,7 +91,11 @@ document.addEventListener('DOMContentLoaded', function () {
       searchResults.innerHTML = "";
 
       if (!Array.isArray(data) || data.length === 0) {
-        searchResults.innerHTML = "<p>No results found.</p>";
+        searchResults.innerHTML = `
+            <p style="text-align: center; margin-top: 20px;">
+              No results found.
+            </p>
+          `;
         return;
       }
 
