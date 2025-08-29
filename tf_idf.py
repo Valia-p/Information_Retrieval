@@ -31,67 +31,6 @@ def load_inverse_index_and_docs():
     return inverse_index, df, doc_id_to_index, index_to_doc_id
 
 
-# def compute_tf_idf_similarity(query_tokens):
-#     inverse_index, df, doc_id_to_index, _ = load_inverse_index_and_docs()
-#     num_docs = len(df)
-#
-#     # Βρες όλα τα doc_ids που περιέχουν τουλάχιστον μία λέξη του query
-#     candidate_docs = set()
-#     for word in query_tokens:
-#         if word in inverse_index:
-#             candidate_docs.update(inverse_index[word].keys())
-#
-#     scores = {}
-#     doc_lengths = {}
-#
-#     for word in query_tokens:
-#         if word not in inverse_index:
-#             continue
-#
-#         docs = inverse_index[word]
-#         idf = math.log(1 + num_docs / len(docs))
-#
-#         for doc_id, tf in docs.items():
-#             if doc_id not in candidate_docs:
-#                 continue
-#
-#             tf_weight = 1 + math.log(tf)
-#             scores[doc_id] = scores.get(doc_id, 0.0) + tf_weight * idf
-#
-#     # Υπολογισμός κανονικοποιημένων scores (cosine similarity)
-#     for doc_id in scores.keys():
-#         idx = doc_id_to_index.get(doc_id)
-#         if idx is None:
-#             continue
-#
-#         doc_text = df.loc[idx, "cleaned_speech"]
-#         doc_tokens = doc_text.split()
-#         length_squared = 0.0
-#
-#         # Υπολογισμός μέτρου του διανύσματος TF-IDF για κάθε doc
-#         seen = set()
-#         for word in doc_tokens:
-#             if word in seen or word not in inverse_index:
-#                 continue
-#             seen.add(word)
-#
-#             docs = inverse_index[word]
-#             if doc_id not in docs:
-#                 continue
-#
-#             tf = docs[doc_id]
-#             tf_weight = 1 + math.log(tf)
-#             idf = math.log(1 + num_docs / len(docs))
-#             length_squared += (tf_weight * idf) ** 2
-#
-#         if length_squared > 0:
-#             scores[doc_id] /= math.sqrt(length_squared)
-#         else:
-#             scores[doc_id] = 0.0
-#
-#     return scores  # {doc_id: score}
-
-
 def compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n=10, return_scores=False):
     num_docs_total = len(df)
     word_scores = {}

@@ -3,7 +3,7 @@
 // Endpoints used:
 //   GET  /themes/overview
 //   GET  /themes/cluster?id=NN
-//   GET  /themes/embedding2d   -> optional, for 2D scatter of LSI (downsampled)
+//   GET  /themes/embedding2d
 
 (function () {
   const els = {
