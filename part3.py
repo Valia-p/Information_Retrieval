@@ -172,28 +172,6 @@ def compute_and_store_all_pairs(min_score: float = 0.0, topk_per_member: Optiona
         conn.close()
 
 
-def is_part3_already_computed() -> bool:
-    """
-       Check if member_similarity_pairs table exists AND has at least one row.
-       Returns:
-           True if similarities are already computed, else False
-    """
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='member_similarity_pairs'")
-        exists = (cur.fetchone()[0] == 1)
-        if not exists:
-            conn.close()
-            return False
-        cur.execute("SELECT COUNT(*) FROM member_similarity_pairs")
-        done = (cur.fetchone()[0] > 0)
-        conn.close()
-        return done
-    except Exception:
-        return False
-
-
 # def similar_to_member(name: str, topk: int = 10):
 #     """
 #         Given a member's full_name, return top-k most similar members.

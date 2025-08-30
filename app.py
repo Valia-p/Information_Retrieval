@@ -4,8 +4,8 @@ from query_processing import process_query
 from data_cleaning import process_dataset
 from inverted_index import create_inverse_index_catalogue
 from part2 import run_all_part2_tasks, find_entity_id_by_name
-from part3 import compute_and_store_all_pairs,is_part3_already_computed
-from create_database import create_schema, populate_data, is_part2_already_computed
+from part3 import compute_and_store_all_pairs
+from create_database import create_schema, populate_data, is_part2_already_computed, is_part3_already_computed
 from LSI import build_tfidf_matrix, perform_lsi, clustering_lsi_docs
 import sqlite3
 import os

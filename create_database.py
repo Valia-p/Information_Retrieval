@@ -71,6 +71,10 @@ def create_schema(conn):
 
 
 def insert_or_get_id(cursor, table, field, value):
+    """
+       Utility: Insert a value into a table if it does not exist,
+       and return its primary key id.
+    """
     cursor.execute(f"SELECT id FROM {table} WHERE {field} = ?", (value,))
     row = cursor.fetchone()
     if row:
@@ -80,14 +84,28 @@ def insert_or_get_id(cursor, table, field, value):
 
 
 def populate_data(conn, csv_path):
+    """
+        Populate the database from a cleaned CSV dataset.
+        Steps:
+          - Read CSV
+          - Drop rows with missing essential fields
+          - Parse sitting_date to datetime
+          - Add derived 'year' column
+          - Insert members, parties, speeches into DB
+    """
     df = pd.read_csv(csv_path)
+
+    # Drop rows with missing speech, cleaned speech, member, party, or date
     df = df.dropna(subset=["speech", "cleaned_speech", "member_name", "political_party", "sitting_date"])
+    # Parse dates
     df["sitting_date"] = pd.to_datetime(df["sitting_date"], errors="coerce")
     df = df.dropna(subset=["sitting_date"])
+    # Add year column
     df["year"] = df["sitting_date"].dt.year
 
     cursor = conn.cursor()
 
+    # Insert speeches and link them to members and parties
     for _, row in df.iterrows():
         member_id = insert_or_get_id(cursor, "members", "full_name", row["member_name"])
         party_id = insert_or_get_id(cursor, "parties", "name", row["political_party"])
@@ -110,6 +128,15 @@ def populate_data(conn, csv_path):
 
 
 def is_part2_already_computed():
+    """
+        Check whether Part2 preprocessing (keywords extraction) has already been computed.
+        Returns:
+            True if the following tables contain data:
+              - speech_keywords
+              - member_keywords_by_year
+              - party_keywords_by_year
+            False otherwise.
+    """
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
@@ -130,5 +157,26 @@ def is_part2_already_computed():
         return True
 
     except Exception as e:
-        print(f"[!] Error checking keyword tables: {e}")
+        print(f"Error checking keyword tables: {e}")
+        return False
+
+def is_part3_already_computed() -> bool:
+    """
+       Check if member_similarity_pairs table exists AND has at least one row.
+       Returns:
+           True if similarities are already computed, else False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='member_similarity_pairs'")
+        exists = (cur.fetchone()[0] == 1)
+        if not exists:
+            conn.close()
+            return False
+        cur.execute("SELECT COUNT(*) FROM member_similarity_pairs")
+        done = (cur.fetchone()[0] > 0)
+        conn.close()
+        return done
+    except Exception:
         return False

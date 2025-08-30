@@ -133,25 +133,3 @@ def print_cluster(cluster_id):
             print(row[0][:1000], "\n")
 
     conn.close()
-
-
-# it can be deleted after
-if __name__ == "__main__":
-    if not os.path.exists(TFIDF_FILE) or not os.path.exists(DOC_IDS_FILE):
-        build_tfidf_matrix()
-    else:
-        print("TF-IDF files already exist. Skipping TF-IDF.")
-
-    if not os.path.exists(LSI_OUTPUT_FILE):
-        perform_lsi()
-    else:
-        print("LSI projection already exists. Skipping LSI.")
-
-    if not os.path.exists(CLUSTERS_FILE):
-        clustering_lsi_docs()
-    else:
-        print("Clustering already exists. Skipping clustering.")
-
-    # for testing
-    print("\n Printing 10 sample speeches from Cluster 0:\n")
-    print_cluster(5)

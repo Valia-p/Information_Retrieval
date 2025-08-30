@@ -5,6 +5,28 @@ import sqlite3
 
 
 def load_inverse_index_and_docs():
+    """
+        Load the inverted index and the speeches dataframe.
+
+        Returns:
+            inverse_index (dict):
+                word -> { doc_id: term_frequency, ... }
+
+            df (pd.DataFrame):
+                speeches joined with member and party info,
+                columns: [doc_id, cleaned_speech, sitting_date, year, member_name, political_party]
+
+            doc_id_to_index (dict):
+                mapping from doc_id (used in DB/inverse_index) -> dataframe row index
+
+            index_to_doc_id (dict):
+                reverse mapping from dataframe index -> doc_id
+
+        Steps:
+            - Load inverse index from pickle ("inverse_index.pkl").
+            - Load speeches + metadata from SQLite.
+            - Reindex DataFrame and build mapping dicts for consistency.
+    """
     # Load inverse index from pickle
     with open("inverse_index.pkl", "rb") as f:
         inverse_index = pickle.load(f)
@@ -32,6 +54,31 @@ def load_inverse_index_and_docs():
 
 
 def compute_tf_idf_keywords_subset(inverse_index, df, doc_ids, top_n=10, return_scores=False):
+    """
+        Compute top TF-IDF keywords for a given set of documents.
+
+        Args:
+            inverse_index (dict):
+                word -> { doc_id: term_frequency, ... }
+            df (pd.DataFrame):
+                speeches dataframe (must include 'cleaned_speech')
+            doc_ids (list[int]):
+                list of document indices (row indices in df)
+            top_n (int):
+                number of top keywords to return
+            return_scores (bool):
+                if True, return list of (word, score);
+                if False, return list of words only
+
+        Returns:
+            list: top_n words or (word, score) pairs
+
+        Notes:
+            - Uses standard TF-IDF:
+                TF = 1 + log(term_frequency)
+                IDF = log(1 + N / df(word))
+            - Aggregates scores over all doc_ids in the subset.
+    """
     num_docs_total = len(df)
     word_scores = {}
 

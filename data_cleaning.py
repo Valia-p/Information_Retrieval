@@ -55,20 +55,20 @@ def remove_accents(word: str) -> str:
 
 def stem_word(word: str, pos: str) -> str:
     """
-    Stem a word based on its part of speech tag.
+        Stem a word based on its part of speech tag.
 
-    Parameters:
-        word (str): The cleaned input word.
-        pos (str): The POS tag from spaCy (NOUN, VERB, etc.).
+        Parameters:
+            word (str): The cleaned input word.
+            pos (str): The POS tag from spaCy (NOUN, VERB, etc.).
 
-    Returns:
-        str: Stemmed word or empty string if stemming fails.
+        Returns:
+            str: Stemmed word or empty string if stemming fails.
 
-    Example:
-    stem_word("αγοράζει", "VERB") -> "αγοραζ"
-    stem_word("πρόεδρος", "NOUN") -> "προεδρ"
+        Example:
+        stem_word("αγοράζει", "VERB") -> "αγοραζ"
+        stem_word("πρόεδρος", "NOUN") -> "προεδρ"
 
-    **** POS map does not work. Fix in process if needed. ****
+        **** POS map does not work. Fix in process if needed. ****
     """
     try:
         word_clean = remove_accents(word).upper()
