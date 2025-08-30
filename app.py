@@ -413,28 +413,6 @@ def similarity_member_endpoint():
     neighbors = [{"member": name_map.get(oid, str(oid)), "score": float(sc)} for oid, sc in rows]
     return jsonify({"name": display_name, "neighbors": neighbors})
 
-@app.route("/similarity/top_pairs", methods=["GET"])
-def similarity_top_pairs():
-    """
-        Return the top-N most similar member–member pairs
-        (highest cosine similarity scores).
-        GET /similarity/top_pairs?limit=50
-    """
-
-    k = int(request.args.get("limit") or 50)
-    conn = sqlite3.connect(DB_NAME)
-    cur = conn.cursor()
-    cur.execute("""
-      SELECT m1.full_name, m2.full_name, sp.score
-      FROM member_similarity_pairs sp
-      JOIN members m1 ON m1.id = sp.member1_id
-      JOIN members m2 ON m2.id = sp.member2_id
-      ORDER BY sp.score DESC LIMIT ?
-    """, (k,))
-    rows = [{"member1": a, "member2": b, "score": round(s, 4)} for a, b, s in cur.fetchall()]
-    conn.close()
-    return jsonify({"pairs": rows})
-
 
 @app.route("/themes/overview", methods=["GET"])
 def themes_overview():

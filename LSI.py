@@ -107,29 +107,3 @@ def clustering_lsi_docs():
     # for testing
     for cid, docs in clusters.items():
         print(f"Cluster {cid} → {len(docs)} documents")
-
-
-def print_cluster(cluster_id):
-    """Prints the first speeches of a given cluster."""
-    if not os.path.exists(CLUSTERS_FILE):
-        clustering_lsi_docs()
-
-    with open(CLUSTERS_FILE, "rb") as f:
-        clusters = pickle.load(f)
-
-    if cluster_id not in clusters:
-        print(f"Cluster {cluster_id} not found.")
-        return
-
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    print(f"Showing speeches from cluster {cluster_id}:")
-    for doc_id in clusters[cluster_id][:10]:
-        cursor.execute("SELECT speech FROM speeches WHERE doc_id = ?", (int(doc_id),))
-        row = cursor.fetchone()
-        if row:
-            print("---------------")
-            print(row[0][:1000], "\n")
-
-    conn.close()
