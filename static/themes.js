@@ -97,14 +97,14 @@
 
     chartInstance = new Chart(els.chartCanvas.getContext('2d'),{
       type:'bar',
-      data:{ labels, datasets:[{ label:'Πλήθος ομιλιών', data:sizes }] },
+      data:{ labels, datasets:[{ label:'Number of Speeches', data:sizes }] },
       options:{
         responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false}, tooltip:{ callbacks:{
           title:(ctx)=>ctx[0]?.label||'',
           label:(ctx)=>{ const cid=(ctx.label||'').replace(/^C/,''); const kws=tipMap.get(cid)||''; const size=ctx.raw; const lines=[`Μέγεθος: ${fmt.number(size)}`]; if(kws) lines.push(`Λέξεις: ${kws}`); return lines; }
         }}},
-        scales:{ x:{ ticks:{ autoSkip:true, maxRotation:0 } }, y:{ beginAtZero:true, title:{display:true,text:'Ομιλίες'} } },
+        scales:{ x:{ ticks:{ autoSkip:true, maxRotation:0 } }, y:{ beginAtZero:true, title:{display:true,text:'Speeches'} } },
         onClick(_e,elsIdx){ if(!elsIdx?.length) return; const idx=elsIdx[0].index; const cid=items[idx]?.cluster_id; if (typeof cid==='number') openCluster(cid,true); }
       }
     });
@@ -119,9 +119,9 @@
       <div class="card-header" style="display:flex; align-items:baseline; justify-content:space-between; gap:.5rem;">
         <div>
           <h3 class="card-title" style="margin-bottom:.2rem;">Cluster C${fmt.escape(c.cluster_id)}</h3>
-          <div class="muted" style="font-size:.9rem;">${fmt.number(c.size)} ομιλίες</div>
+          <div class="muted" style="font-size:.9rem;">${fmt.number(c.size)} Speeches</div>
         </div>
-        <button class="primary" style="white-space:nowrap">Άνοιγμα</button>
+        <button class="primary" style="white-space:nowrap">Open</button>
       </div>
       <div class="card-body">
         <div class="ta-keywords">${kw.map(k=>`<span class=\"badge\">${fmt.escape(k)}</span>`).join(' ')||'<em class="muted">Χωρίς λέξεις</em>'}</div>
@@ -137,7 +137,7 @@
     function renderOutliers(items){
     clearNode(els.outliersWrap);
     if (!items || items.length === 0){
-      els.outliersWrap.innerHTML = '<div class="muted">Δεν εντοπίστηκαν outliers για αυτό το cluster.</div>';
+      els.outliersWrap.innerHTML = '<div class="muted">No outliers were detected for this cluster.</div>';
       return;
     }
     const wrap = document.createElement('div');
@@ -159,13 +159,13 @@
         </div>
         <div class="card-body">
           <div class="outlier-excerpt">${fmt.escape(o.excerpt || '')}</div>
-          <button class="copy-btn" style="margin-top:.5rem">Αντιγραφή αποσπάσματος</button>
+          <button class="copy-btn" style="margin-top:.5rem">Copy Excerpt</button>
         </div>`;
       card.querySelector('.copy-btn')?.addEventListener('click', async (e)=>{
         try{
           await navigator.clipboard.writeText(o.excerpt || '');
-          e.target.textContent = 'Αντιγράφηκε!';
-          setTimeout(()=> e.target.textContent = 'Αντιγραφή αποσπάσματος', 1200);
+          e.target.textContent = 'Copied!';
+          setTimeout(()=> e.target.textContent = 'Copy Excerpt', 1200);
         }catch{}
       });
       wrap.appendChild(card);
@@ -220,22 +220,22 @@
 
   function setRepr(metaHtml, textHtml){ els.reprMeta.innerHTML=metaHtml; els.reprText.innerHTML=textHtml; }
 
-  function addCopyBtn(){ const wrap=els.reprMeta.parentElement; if(!wrap||wrap.querySelector('.copy-btn')) return; const btn=document.createElement('button'); btn.className='copy-btn'; btn.textContent='Αντιγραφή αποσπάσματος'; btn.style.marginTop='.5rem'; btn.addEventListener('click', async()=>{ try{ const text=els.reprText.innerText||els.reprText.textContent||''; await navigator.clipboard.writeText(text); btn.textContent='Αντιγράφηκε!'; setTimeout(()=>btn.textContent='Αντιγραφή αποσπάσματος',1400);}catch{} }); wrap.appendChild(btn); }
+  function addCopyBtn(){ const wrap=els.reprMeta.parentElement; if(!wrap||wrap.querySelector('.copy-btn')) return; const btn=document.createElement('button'); btn.className='copy-btn'; btn.textContent='Copy Excerpt'; btn.style.marginTop='.5rem'; btn.addEventListener('click', async()=>{ try{ const text=els.reprText.innerText||els.reprText.textContent||''; await navigator.clipboard.writeText(text); btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy Excerpt',1400);}catch{} }); wrap.appendChild(btn); }
 
-  function renderPartyChart(counts){ clearNode(els.partyBars); const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]); if(entries.length===0){ els.partyBars.innerHTML='<div class="muted">Δεν υπάρχουν δεδομένα</div>'; return; } const canvas=document.createElement('canvas'); canvas.height=200; els.partyBars.appendChild(canvas); const labels=entries.map(e=>e[0]); const values=entries.map(e=>e[1]); if(partyChart) partyChart.destroy(); partyChart=new Chart(canvas.getContext('2d'),{ type:'bar', data:{ labels, datasets:[{ label:'Ομιλίες', data:values }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true } } } }); }
+  function renderPartyChart(counts){ clearNode(els.partyBars); const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]); if(entries.length===0){ els.partyBars.innerHTML='<div class="muted">There are no data.</div>'; return; } const canvas=document.createElement('canvas'); canvas.height=200; els.partyBars.appendChild(canvas); const labels=entries.map(e=>e[0]); const values=entries.map(e=>e[1]); if(partyChart) partyChart.destroy(); partyChart=new Chart(canvas.getContext('2d'),{ type:'bar', data:{ labels, datasets:[{ label:'Speeches', data:values }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true } } } }); }
 
-  function renderMembersChart(memberTop){ clearNode(els.topMembers); if(!memberTop||memberTop.length===0){ els.topMembers.innerHTML='<li class="muted">Δεν υπάρχουν δεδομένα</li>'; return; } const canvas=document.createElement('canvas'); canvas.height=Math.max(180, memberTop.length*26); els.topMembers.appendChild(canvas); const labels=memberTop.map(m=>m.member); const values=memberTop.map(m=>m.count); if(membersChart) membersChart.destroy(); membersChart=new Chart(canvas.getContext('2d'),{ type:'bar', data:{ labels, datasets:[{ label:'Ομιλίες', data:values }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true } } } }); }
+  function renderMembersChart(memberTop){ clearNode(els.topMembers); if(!memberTop||memberTop.length===0){ els.topMembers.innerHTML='<li class="muted">There are no data.</li>'; return; } const canvas=document.createElement('canvas'); canvas.height=Math.max(180, memberTop.length*26); els.topMembers.appendChild(canvas); const labels=memberTop.map(m=>m.member); const values=memberTop.map(m=>m.count); if(membersChart) membersChart.destroy(); membersChart=new Chart(canvas.getContext('2d'),{ type:'bar', data:{ labels, datasets:[{ label:'Ομιλίες', data:values }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true } } } }); }
 
-  function fillTable(samples){ const tbody=els.table?.querySelector('tbody'); if(!tbody) return; clearNode(tbody); if(!samples||samples.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='muted'; td.style.textAlign='center'; td.textContent='Δεν υπάρχουν δείγματα ομιλιών'; tr.appendChild(td); tbody.appendChild(tr); return; } samples.forEach((s,i)=>{ const tr=document.createElement('tr'); const tdIdx=document.createElement('td'); tdIdx.textContent=String(i+1); tdIdx.style.textAlign = 'center'; const tdMember=document.createElement('td'); tdMember.textContent=s.member||'—'; tdMember.style.paddingLeft="100px"; const tdParty=document.createElement('td'); tdParty.textContent=s.party||'—'; const tdDate=document.createElement('td'); tdDate.textContent=s.date||'—'; tdDate.style.textAlign = 'center'; tr.appendChild(tdIdx); tr.appendChild(tdMember); tr.appendChild(tdParty); tr.appendChild(tdDate); tbody.appendChild(tr); }); }
+  function fillTable(samples){ const tbody=els.table?.querySelector('tbody'); if(!tbody) return; clearNode(tbody); if(!samples||samples.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='muted'; td.style.textAlign='center'; td.textContent='There are no speech data.'; tr.appendChild(td); tbody.appendChild(tr); return; } samples.forEach((s,i)=>{ const tr=document.createElement('tr'); const tdIdx=document.createElement('td'); tdIdx.textContent=String(i+1); tdIdx.style.textAlign = 'center'; const tdMember=document.createElement('td'); tdMember.textContent=s.member||'—'; tdMember.style.paddingLeft="100px"; const tdParty=document.createElement('td'); tdParty.textContent=s.party||'—'; const tdDate=document.createElement('td'); tdDate.textContent=s.date||'—'; tdDate.style.textAlign = 'center'; tr.appendChild(tdIdx); tr.appendChild(tdMember); tr.appendChild(tdParty); tr.appendChild(tdDate); tbody.appendChild(tr); }); }
 
   // Embedding (LSI→PCA 2D) -----------------------------------
   function ensureEmbeddingCard(){
     if (!els.section || document.getElementById('embedding-card')) return;
     const card=document.createElement('div'); card.className='card ta-embed-card'; card.id='embedding-card';
     card.innerHTML=`
-      <div class="card-header"><h3 class="card-title">Χάρτης Θεμάτων (2D LSI-PCA)</h3></div>
+      <div class="card-header"><h3 class="card-title">Themes Map (2D LSI-PCA)</h3></div>
       <div class="card-body">
-        <div class="muted" style="margin-bottom:.5rem; margin-left:22px; margin-top:.5rem">Κάθε σημείο είναι μια ομιλία· το χρώμα είναι το cluster. Κλικ για να ανοίξεις cluster.</div>
+        <div class="muted" style="margin-bottom:.5rem; margin-left:22px; margin-top:.5rem">Each point is a speech; the color is the cluster. Click to open cluster.</div>
         <div class="chart-container" style="height: 380px"><canvas id="embedding-chart" height="320" aria-label="2D topic map"></canvas></div>
       </div>`;
     els.section.querySelector('.container').insertBefore(card, els.list);
