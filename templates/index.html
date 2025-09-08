@@ -185,7 +185,7 @@
             <!-- Γράφημα: Κατανομή ομιλιών ανά cluster -->
             <div class="card ta-accent">
               <div class="card-header">
-                <h3 class="card-title">Κατανομή Ομιλιών ανά Cluster</h3>
+                <h3 class="card-title">Speeches Distribution per Cluster</h3>
               </div>
               <div class="card-body">
                 <div class="chart-container ta-chart-lg">
@@ -206,19 +206,19 @@
                 <!-- KPIs -->
                 <div class="ta-kpis">
                   <div class="ta-kpi">
-                    <div class="ta-kpi-label">Μέγεθος</div>
+                    <div class="ta-kpi-label">Size</div>
                     <div class="ta-kpi-value" id="kpi-size">—</div>
                   </div>
                   <div class="ta-kpi">
-                    <div class="ta-kpi-label">Χρονικό εύρος</div>
+                    <div class="ta-kpi-label">Time Range</div>
                     <div class="ta-kpi-value" id="kpi-dates">—</div>
                   </div>
                   <div class="ta-kpi">
-                    <div class="ta-kpi-label">Μέση έκταση ομιλίας</div>
+                    <div class="ta-kpi-label">Average Speech Length</div>
                     <div class="ta-kpi-value" id="kpi-avglen">—</div>
                   </div>
                   <div class="ta-kpi">
-                    <div class="ta-kpi-label">Συνοχή (centroid)</div>
+                    <div class="ta-kpi-label">Coherence (centroid)</div>
                     <div class="ta-kpi-value" id="kpi-cohesion">—</div>
                   </div>
                 </div>
@@ -231,19 +231,19 @@
 
                 <!-- Κατανομή κομμάτων -->
                 <div class="ta-section">
-                  <div class="ta-section-title">Κατανομή κομμάτων</div>
+                  <div class="ta-section-title">Parties Distribution</div>
                   <div id="ta-party-bars" class="ta-bars"></div>
                 </div>
 
                 <!-- Κορυφαίοι Βουλευτές -->
                 <div class="ta-section">
-                  <div class="ta-section-title">Κορυφαίοι βουλευτές (κατά πλήθος ομιλιών)</div>
+                  <div class="ta-section-title">Top MPs (by number of speeches)</div>
                   <ol id="ta-top-members" class="ta-toplist"></ol>
                 </div>
 
                 <!-- Αντιπροσωπευτική ομιλία -->
                 <div class="ta-section">
-                  <div class="ta-section-title">Αντιπροσωπευτική ομιλία</div>
+                  <div class="ta-section-title">Representative Speech</div>
                   <div id="ta-repr" class="ta-repr">
                     <div class="ta-repr-meta" id="ta-repr-meta">—</div>
                     <div class="ta-repr-text" id="ta-repr-text"><em>—</em></div>
@@ -252,7 +252,7 @@
 
                 <!-- Outliers -->
                 <div class="ta-section" style="margin-right: 0">
-                    <h4 class="ta-section-title">Ακραίες ομιλίες (Outliers)</h4>
+                    <h4 class="ta-section-title">Outliers (Speeches)</h4>
 
                   <div class="card-body" id="ta-outliers"></div>
 
@@ -261,15 +261,15 @@
 
                 <!-- Δείγματα ομιλιών -->
                 <div class="ta-section">
-                  <div class="ta-section-title">Ενδεικτικές ομιλίες</div>
+                  <div class="ta-section-title">Indicative Speeches</div>
                   <div class="table-wrap">
                     <table class="table" id="cluster-panel-table">
                       <thead>
                         <tr>
                           <th style="width:64px">#</th>
-                          <th>Βουλευτής</th>
-                          <th>Κόμμα</th>
-                          <th style="width:160px">Ημερομηνία</th>
+                          <th>Member of Parliament</th>
+                          <th>Political Party</th>
+                          <th style="width:160px">Date</th>
                         </tr>
                       </thead>
                       <tbody><!-- γεμίζει από JS --></tbody>
@@ -290,16 +290,16 @@
 
           <div class="card-body">
             <div class="controls" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
-              <label>Τύπος
+              <label>Type:
                 <select id="drift-type">
-                  <option value="party">Κόμμα</option>
-                  <option value="member">Μέλος</option>
+                  <option value="party">Party</option>
+                  <option value="member">Member</option>
                 </select>
               </label>
-              <label>Οντότητα
+              <label>Entity:
                 <select id="drift-entity"></select>
               </label>
-              <button id="btn-drift" class="primary">Προβολή</button>
+              <button id="btn-drift" class="primary">Show</button>
             </div>
 
             <div class="chart-container" style="height:360px; margin-top:1rem;">
