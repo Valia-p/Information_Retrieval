@@ -19,8 +19,8 @@
                     <li><a href="#search">Search</a></li>
                     <li><a href="#keywords">Keyword Tracking</a></li>
                     <li><a href="#similarity">Similarity Analysis</a></li>
-                    <li><a href="#themes">Thematic Analysis</a></li>
-<!--                    <li><a href="#sentiment">Sentiment Analysis</a></li>-->
+                    <li><a href="#thematic">Thematic Analysis</a></li>
+                    <li><a href="#topic-drift">Thematic Drift Analysis</a></li>
                 </ul>
             </nav>
         </div>
@@ -250,6 +250,15 @@
                   </div>
                 </div>
 
+                <!-- Outliers -->
+                <div class="ta-section" style="margin-right: 0">
+                    <h4 class="ta-section-title">Ακραίες ομιλίες (Outliers)</h4>
+
+                  <div class="card-body" id="ta-outliers"></div>
+
+                </div>
+
+
                 <!-- Δείγματα ομιλιών -->
                 <div class="ta-section">
                   <div class="ta-section-title">Ενδεικτικές ομιλίες</div>
@@ -274,10 +283,38 @@
           </div>
         </section>
 
+        <!-- Thematic Drift Section -->
+        <section id="topic-drift" class="container">
+
+            <h2>Thematic Drift Analysis</h2>
+
+          <div class="card-body">
+            <div class="controls" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+              <label>Τύπος
+                <select id="drift-type">
+                  <option value="party">Κόμμα</option>
+                  <option value="member">Μέλος</option>
+                </select>
+              </label>
+              <label>Οντότητα
+                <select id="drift-entity"></select>
+              </label>
+              <button id="btn-drift" class="primary">Προβολή</button>
+            </div>
+
+            <div class="chart-container" style="height:360px; margin-top:1rem;">
+              <canvas id="drift-chart"></canvas>
+            </div>
+          </div>
+        </section>
+
+
+
     </main>
     <script src="static/search.js"></script>
     <script src="static/keywords.js"></script>
     <script src="static/similarity.js"></script>
     <script src="static/themes.js"></script>
+    <script src="static/drift.js"></script>
 </body>
 </html>

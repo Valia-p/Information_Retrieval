@@ -21,7 +21,9 @@
     topMembers: document.getElementById('ta-top-members'),
     reprMeta: document.getElementById('ta-repr-meta'),
     reprText: document.getElementById('ta-repr-text'),
-    table: document.getElementById('cluster-panel-table')
+    table: document.getElementById('cluster-panel-table'),
+        outliersWrap: document.getElementById('ta-outliers'),
+
   };
 
   // Inject UI upgrades
@@ -132,6 +134,46 @@
 
   function renderCards(items){ if(!els.list) return; clearNode(els.list); const f=document.createDocumentFragment(); items.forEach(c=>f.appendChild(cardTemplate(c))); els.list.appendChild(f); }
 
+    function renderOutliers(items){
+    clearNode(els.outliersWrap);
+    if (!items || items.length === 0){
+      els.outliersWrap.innerHTML = '<div class="muted">Δεν εντοπίστηκαν outliers για αυτό το cluster.</div>';
+      return;
+    }
+    const wrap = document.createElement('div');
+    wrap.style.display = 'grid';
+    wrap.style.gridTemplateColumns = 'repeat(auto-fit, minmax(280px, 1fr))';
+    wrap.style.gap = '.75rem';
+    wrap.className = 'outliers-grid';
+
+    items.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'card outlier-card';
+      card.innerHTML = `
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;">
+          <div>
+            <div style="font-weight:600">${fmt.escape(o.member || '—')}</div>
+            <div class="muted" style="font-size:.9rem">${fmt.escape(o.party || '—')} • ${fmt.escape(o.date || '—')}</div>
+          </div>
+          <span class="badge" title="Cosine προς centroid">sim: ${o.sim != null ? Number(o.sim).toFixed(3) : '—'}</span>
+        </div>
+        <div class="card-body">
+          <div class="outlier-excerpt">${fmt.escape(o.excerpt || '')}</div>
+          <button class="copy-btn" style="margin-top:.5rem">Αντιγραφή αποσπάσματος</button>
+        </div>`;
+      card.querySelector('.copy-btn')?.addEventListener('click', async (e)=>{
+        try{
+          await navigator.clipboard.writeText(o.excerpt || '');
+          e.target.textContent = 'Αντιγράφηκε!';
+          setTimeout(()=> e.target.textContent = 'Αντιγραφή αποσπάσματος', 1200);
+        }catch{}
+      });
+      wrap.appendChild(card);
+    });
+
+    els.outliersWrap.appendChild(wrap);
+  }
+
   // Cluster details -------------------------------------------
   async function openCluster(clusterId, jump){
     try{
@@ -154,10 +196,13 @@
       // Keywords
       clearNode(els.kwWrap); const kws=(data.top_keywords||[]).slice(0,12);
       if(kws.length===0){ els.kwWrap.innerHTML='<em class="muted">Δεν υπάρχουν keywords</em>'; } else { kws.forEach(k=>els.kwWrap.appendChild(badge(k))); }
+      clearNode(els.outliersWrap);
+      els.outliersWrap.appendChild(skeleton(90));
 
       // Charts
       renderPartyChart(data.party_counts||{});
       renderMembersChart(data.member_top||[]);
+      renderOutliers(data.outliers || []);
 
       // Representative
       if(data.repr){ const {member,party,date,excerpt}=data.repr; const meta=[member,party,date].filter(Boolean).join(' • '); setRepr(meta||'—', fmt.escape(excerpt||'—')); addCopyBtn(); }

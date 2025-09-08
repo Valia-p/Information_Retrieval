@@ -12,6 +12,7 @@ import os
 import unicodedata
 import numpy as _np, pickle as _pickle
 from scipy.sparse import load_npz as _load_npz
+from sklearn.metrics.pairwise import cosine_similarity
 
 # --- File paths for persistent artifacts ---
 DB_NAME = "parliament.db"
@@ -552,25 +553,31 @@ def themes_cluster():
         else:
             top_keywords = []
 
-        # --- Representative doc (closest to centroid) & cohesion ---
+        # --- Representative doc (closest to centroid), cohesion & Outliers ---
         repr_doc = None
         avg_centroid_sim = None
+        outliers = []  # NEW
+
         if rows:
             centroid = tfidf[rows].mean(axis=0)
-            c_norm = _np.linalg.norm(centroid) or 1.0
+            c_norm = (_np.linalg.norm(centroid) or 1.0)
+
+            # Συγκεντρώνουμε (sid, sim) για όλα τα docs του cluster
             sims = []
-            best_sim = -1.0; best_id = None
             for sid in ids:
-                if sid not in row_index: continue
+                if sid not in row_index:
+                    continue
                 v = tfidf[row_index[sid]]
                 denom = (_np.linalg.norm(v) or 1.0) * c_norm
                 sim = float(_np.dot(v, centroid) / denom)
-                sims.append(sim)
-                if sim > best_sim:
-                    best_sim = sim; best_id = sid
-            avg_centroid_sim = float(_np.mean(sims)) if sims else None
+                sims.append((sid, sim))  # <-- Κρατάμε (sid, sim)
 
-            if best_id is not None:
+            if sims:
+                avg_centroid_sim = float(_np.mean([s for _, s in sims]))
+
+                # Representative: μέγιστη ομοιότητα
+                best_id, best_sim = max(sims, key=lambda x: x[1])
+
                 cur.execute("""
                     SELECT s.id, s.doc_id, s.speech, s.sitting_date, m.full_name, p.name
                     FROM speeches s
@@ -587,8 +594,35 @@ def themes_cluster():
                         "member": member,
                         "party": party,
                         "date": date,
-                        "excerpt": (speech[:600] + ("..." if speech and len(speech) > 600 else "")) if speech else None
+                        "excerpt": (speech[:600] + ("..." if speech and len(speech) > 600 else "")) if speech else None,
+                        "sim": round(float(best_sim), 4)  # προαιρετικά δείξε και similarity
                     }
+
+                # Outliers = τα χαμηλότερα sims (π.χ. bottom-3)
+                sims_sorted = sorted(sims, key=lambda x: x[1])  # ascending by similarity
+                k = min(3, len(sims_sorted))
+                outlier_ids = [sid for sid, _ in sims_sorted[:k]]
+                if outlier_ids:
+                    placeholders = ",".join("?" for _ in outlier_ids)
+                    cur.execute(f"""
+                        SELECT s.id, s.doc_id, s.speech, s.sitting_date, m.full_name, p.name
+                        FROM speeches s
+                        JOIN members m ON s.member_id = m.id
+                        JOIN parties p ON s.party_id = p.id
+                        WHERE s.id IN ({placeholders})
+                    """, tuple(outlier_ids))
+                    sim_map = {sid: sim for sid, sim in sims}
+                    for sid, docid, speech, date, member, party in cur.fetchall():
+                        outliers.append({
+                            "id": int(sid),
+                            "doc_id": int(docid) if docid is not None else None,
+                            "member": member,
+                            "party": party,
+                            "date": date,
+                            "excerpt": (speech[:320] + (
+                                "..." if speech and len(speech) > 320 else "")) if speech else "",
+                            "sim": round(float(sim_map.get(int(sid), 0.0)), 4)
+                        })
 
         # --- Sample speeches table (up to 10) ---
         samples = []
@@ -624,7 +658,8 @@ def themes_cluster():
             "date_max": date_max,
             "avg_chars": avg_chars,
             "repr": repr_doc,
-            "avg_centroid_sim": avg_centroid_sim
+            "avg_centroid_sim": avg_centroid_sim,
+            "outliers": outliers
         })
     except Exception as e:
         return jsonify({"error": f"Failed to load cluster {cluster_id}: {e}"}), 500
@@ -679,6 +714,113 @@ def themes_embedding2d():
     except Exception as e:
         return jsonify({"error": f"Failed to build embedding: {e}"}), 500
 
+
+@app.route("/extras/topic_drift", methods=["GET"])
+def topic_drift():
+    """
+        Compute 'thematic drift' (1 - cosine similarity) per year for a member or a party.
+        Query parameters:
+          - type=member|party (required)
+          - id=<int>  or  name=<str>  (id preferred from UI dropdown)
+        Returns:
+          { type, id|name, drifts: [{year:int, drift:float}, ...] }
+    """
+    etype = (request.args.get("type") or "").strip().lower()
+    mid   = request.args.get("id")
+    name  = (request.args.get("name") or "").strip()
+
+    if etype not in ("member", "party"):
+        return jsonify({"error": "Invalid type (member|party)"}), 400
+    if not mid and not name:
+        return jsonify({"error": "Provide id or name"}), 400
+
+    # Load LSI embeddings and speech_id mapping (IMPORTANT: speech_id, not doc_id)
+    try:
+        X = _np.load("lsi_projected_docs.npz")["data"]   # shape: [N_docs, K]
+        speech_ids = _np.load("doc_ids.npy")             # shape: [N_docs]
+        row_index = {int(sid): i for i, sid in enumerate(speech_ids.tolist())}
+    except Exception as e:
+        return jsonify({"error": f"Failed to load LSI artifacts: {e}"}), 500
+
+    # Lookups in DB
+    conn = sqlite3.connect("parliament.db")
+    cur  = conn.cursor()
+
+    if etype == "member":
+        if mid:
+            try:
+                key_id = int(mid)
+                cur.execute("SELECT full_name FROM members WHERE id = ?", (key_id,))
+                r = cur.fetchone()
+                if not r:
+                    conn.close(); return jsonify({"error": f"Member id {key_id} not found"}), 404
+                display = r[0]
+            except ValueError:
+                conn.close(); return jsonify({"error": "Invalid member id"}), 400
+        else:
+            cur.execute("SELECT id FROM members WHERE full_name = ?", (name,))
+            r = cur.fetchone()
+            if not r:
+                conn.close(); return jsonify({"error": f"Member '{name}' not found"}), 404
+            key_id = r[0]; display = name
+
+        # Retrieve speech_id (s.id) & year
+        cur.execute("SELECT s.id, s.year FROM speeches s WHERE s.member_id = ?", (key_id,))
+        meta = cur.fetchall()
+        result_header = {"type": "member", "id": key_id, "name": display}
+
+    else:  # party
+        if mid:
+            try:
+                key_id = int(mid)
+                cur.execute("SELECT name FROM parties WHERE id = ?", (key_id,))
+                r = cur.fetchone()
+                if not r:
+                    conn.close(); return jsonify({"error": f"Party id {key_id} not found"}), 404
+                display = r[0]
+            except ValueError:
+                conn.close(); return jsonify({"error": "Invalid party id"}), 400
+        else:
+            cur.execute("SELECT id FROM parties WHERE name = ?", (name,))
+            r = cur.fetchone()
+            if not r:
+                conn.close(); return jsonify({"error": f"Party '{name}' not found"}), 404
+            key_id = r[0]; display = name
+
+        cur.execute("SELECT s.id, s.year FROM speeches s WHERE s.party_id = ?", (key_id,))
+        meta = cur.fetchall()
+        result_header = {"type": "party", "id": key_id, "name": display}
+
+    conn.close()
+
+    if not meta:
+        return jsonify({**result_header, "drifts": []})
+
+    # Group embeddings by year
+    by_year = {}
+    for speech_id, year in meta:
+        idx = row_index.get(int(speech_id))
+        if idx is None:
+            continue
+        by_year.setdefault(int(year), []).append(X[idx])
+
+    if not by_year:
+        return jsonify({**result_header, "drifts": []})
+
+    # Compute centroid per year
+    years = sorted(by_year.keys())
+    centroids = {y: _np.mean(_np.stack(by_year[y], axis=0), axis=0) for y in years}
+
+    # Drift: 1 - cosine(prev, curr), starting from the 2nd year (needs prev)
+    drifts = []
+    for i in range(1, len(years)):
+        prev = centroids[years[i-1]].reshape(1, -1)
+        curr = centroids[years[i]].reshape(1, -1)
+        sim  = float(cosine_similarity(prev, curr)[0, 0])
+        drift = 1.0 - sim
+        drifts.append({"year": years[i], "drift": drift})
+
+    return jsonify({**result_header, "drifts": drifts})
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)
