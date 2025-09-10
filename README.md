@@ -1,4 +1,4 @@
-# Greek Parliament Speeches (1989–2020) — IR Project
+# Greek Parliament Speeches (1989–2020)
 
 A web-based information retrieval app for exploring 1.28M speeches from the Hellenic Parliament (1989–2020).  
 It offers search, keyword trends over time, member similarity, thematic clustering with LSI, outlier inspection, and **topic drift** (how themes shift year-to-year for a member or party).
