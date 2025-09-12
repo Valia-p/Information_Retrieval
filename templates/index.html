@@ -146,15 +146,13 @@
             </div>
 
             <!-- Chart -->
-            <div class="card">
-              <div class="chart-container">
-                <canvas id="similarity-chart" height="200"></canvas>
-              </div>
+            <div class="chart-container">
+              <canvas id="similarity-chart" height="200"></canvas>
             </div>
 
             <!-- Table of neighbors -->
             <div class="card">
-              <div class="card-header">
+              <div class="card-header" style="background-color:#EBF4F6">
                 <h3 id="neighbors-title" class="card-title">Neighbors</h3>
               </div>
               <div class="table-wrap">
@@ -199,25 +197,25 @@
 
             <!-- Panel λεπτομερειών επιλεγμένου cluster (γεμίζει από JS) -->
             <div id="cluster-panel" class="card ta-info" style="display:none; margin-top: var(--spacing-lg);">
-              <div class="card-header">
+              <div class="card-header" style="background-color: #EBF4F6; border-radius: 8px; margin-bottom: 10px">
                 <h3 class="card-title" id="cluster-panel-title">Cluster</h3>
               </div>
               <div class="card-body">
                 <!-- KPIs -->
-                <div class="ta-kpis">
-                  <div class="ta-kpi">
+                <div class="ta-kpis" style="display:flex; justify-content: space-around; align-items: center; text-align:center">
+                  <div class="ta-kpi" style="flex:1">
                     <div class="ta-kpi-label">Size</div>
                     <div class="ta-kpi-value" id="kpi-size">—</div>
                   </div>
-                  <div class="ta-kpi">
+                  <div class="ta-kpi" style="flex:1">
                     <div class="ta-kpi-label">Time Range</div>
                     <div class="ta-kpi-value" id="kpi-dates">—</div>
                   </div>
-                  <div class="ta-kpi">
+                  <div class="ta-kpi" style="flex:1">
                     <div class="ta-kpi-label">Average Speech Length</div>
                     <div class="ta-kpi-value" id="kpi-avglen">—</div>
                   </div>
-                  <div class="ta-kpi">
+                  <div class="ta-kpi" style="flex:1">
                     <div class="ta-kpi-label">Coherence (centroid)</div>
                     <div class="ta-kpi-value" id="kpi-cohesion">—</div>
                   </div>
@@ -254,7 +252,7 @@
                 <div class="ta-section" style="margin-right: 0">
                     <h4 class="ta-section-title">Outliers (Speeches)</h4>
 
-                  <div class="card-body" id="ta-outliers"></div>
+                  <div class="card-body" id="ta-outliers" style="margin-right: 5px; margin-left: 5px"></div>
 
                 </div>
 
