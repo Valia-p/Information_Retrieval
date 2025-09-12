@@ -157,9 +157,9 @@
           </div>
           <span class="badge" title="Cosine προς centroid">sim: ${o.sim != null ? Number(o.sim).toFixed(3) : '—'}</span>
         </div>
-        <div class="card-body">
+        <div class="card-body" style="margin: 10px">
           <div class="outlier-excerpt">${fmt.escape(o.excerpt || '')}</div>
-          <button class="copy-btn" style="margin-top:.5rem">Copy Excerpt</button>
+          <button class="copy-btn" style="margin-top:.5rem; display:block; margin-left:auto; margin-right:auto;">Copy Excerpt</button>
         </div>`;
       card.querySelector('.copy-btn')?.addEventListener('click', async (e)=>{
         try{
