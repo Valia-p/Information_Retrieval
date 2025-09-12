@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // render results
       for (const item of data) {
         const card = document.createElement('div');
-        card.style.background = "#fff";
+        card.style.background = "#EBF4F6";
         card.style.borderRadius = "6px";
         card.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)";
         card.style.padding = "16px";
