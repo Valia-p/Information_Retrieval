@@ -180,7 +180,7 @@
           <div class="container">
             <h2>Thematic Analysis</h2>
 
-            <!-- Γράφημα: Κατανομή ομιλιών ανά cluster -->
+            <!-- Chart: Speech distribution by cluster -->
             <div class="card ta-accent">
               <div class="card-header">
                 <h3 class="card-title">Speeches Distribution per Cluster</h3>
@@ -192,10 +192,9 @@
               </div>
             </div>
 
-            <!-- Grid με clusters (γεμίζει από JS) -->
             <div id="themes-list" class="theme-clusters"></div>
 
-            <!-- Panel λεπτομερειών επιλεγμένου cluster (γεμίζει από JS) -->
+            <!-- Selected cluster details panel -->
             <div id="cluster-panel" class="card ta-info" style="display:none; margin-top: var(--spacing-lg);">
               <div class="card-header" style="background-color: #EBF4F6; border-radius: 8px; margin-bottom: 10px">
                 <h3 class="card-title" id="cluster-panel-title">Cluster</h3>
@@ -227,19 +226,19 @@
                   <div id="cluster-panel-keywords" class="ta-keywords"></div>
                 </div>
 
-                <!-- Κατανομή κομμάτων -->
+                <!-- Political Party Distribution -->
                 <div class="ta-section">
                   <div class="ta-section-title">Parties Distribution</div>
                   <div id="ta-party-bars" class="ta-bars"></div>
                 </div>
 
-                <!-- Κορυφαίοι Βουλευτές -->
+                <!-- Top members -->
                 <div class="ta-section">
                   <div class="ta-section-title">Top MPs (by number of speeches)</div>
                   <ol id="ta-top-members" class="ta-toplist"></ol>
                 </div>
 
-                <!-- Αντιπροσωπευτική ομιλία -->
+                <!-- Representative speech -->
                 <div class="ta-section">
                   <div class="ta-section-title">Representative Speech</div>
                   <div id="ta-repr" class="ta-repr">
@@ -257,7 +256,7 @@
                 </div>
 
 
-                <!-- Δείγματα ομιλιών -->
+                <!-- Speech samples -->
                 <div class="ta-section">
                   <div class="ta-section-title">Indicative Speeches</div>
                   <div class="table-wrap">
@@ -270,7 +269,7 @@
                           <th style="width:160px">Date</th>
                         </tr>
                       </thead>
-                      <tbody><!-- γεμίζει από JS --></tbody>
+                      <tbody></tbody>
                     </table>
                   </div>
                 </div>

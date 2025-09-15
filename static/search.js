@@ -9,9 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (!searchForm || !searchInput || !searchResults) return;
 
-  // -------------------------
   // Helpers
-  // -------------------------
   function escapeRegExp(str){return str.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
   function highlight(text, query){
     const parts=(query||"").trim().split(/\s+/).filter(Boolean);
@@ -41,16 +39,15 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     } catch (err) {
       console.error('populateSelect error:', err);
-      // fallback – τουλάχιστον να υπάρχει το "All"
       selectEl.innerHTML = `<option value="all">${allLabel}</option>`;
     }
   }
 
-  // Γέμισμα dropdowns από DB
+  // Fill dropdowns from DB
   populateSelect(partyFilter, '/entities?type=party',  'All Parties');
   populateSelect(mpFilter,    '/entities?type=member', 'All Members');
 
-  // Αν αλλάξει party/member/date και υπάρχει query, ξανατρέξε το search
+  // If party/member/date changes and a query exists, rerun the search
   function reRunIfQueryExists() {
     const q = (searchInput.value || '').trim();
     if (q) searchForm.dispatchEvent(new Event('submit', {cancelable:true}));
@@ -59,16 +56,14 @@ document.addEventListener('DOMContentLoaded', function () {
   partyFilter.addEventListener('change', reRunIfQueryExists);
   mpFilter.addEventListener('change', reRunIfQueryExists);
 
-  // -------------------------
   // Submit handler
-  // -------------------------
   searchForm.addEventListener('submit', function (e) {
     e.preventDefault();
 
     const query     = (searchInput.value || '').trim();
-    const dateRange = dateRangeFilter.value; // "all" ή "YYYY-YYYY"
-    const party     = partyFilter.value;     // "all" ή πλήρες όνομα κόμματος
-    const mp        = mpFilter.value;        // "all" ή πλήρες όνομα βουλευτή
+    const dateRange = dateRangeFilter.value; // "all" or "YYYY-YYYY"
+    const party     = partyFilter.value;     // "all" or party
+    const mp        = mpFilter.value;        // "all" or member
 
     if (!query) {
       searchResults.innerHTML = '<p class="placeholder-text">Enter search terms above to see results</p>';

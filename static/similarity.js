@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (chosenId){
       url = `/similarity/member?id=${encodeURIComponent(chosenId)}&k=${k}`;
-      // βρες το όνομα που αντιστοιχεί στο option για τον τίτλο
+      // find the name that corresponds to the option for the title
       label = selMember.options[selMember.selectedIndex]?.text || "";
     }else{
       const typed = (inpName.value || "").trim();

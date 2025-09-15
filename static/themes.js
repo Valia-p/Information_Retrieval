@@ -83,7 +83,7 @@
       loadEmbedding();
     }catch(err){
       console.error('Thematic overview error:', err);
-      if (els.list) els.list.innerHTML = '<div class="muted">Δεν βρέθηκαν δεδομένα θεματικών clusters.</div>';
+      if (els.list) els.list.innerHTML = '<div class="muted">No thematic cluster data found.</div>';
     }
   }
 
@@ -228,7 +228,7 @@
 
   function fillTable(samples){ const tbody=els.table?.querySelector('tbody'); if(!tbody) return; clearNode(tbody); if(!samples||samples.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='muted'; td.style.textAlign='center'; td.textContent='There are no speech data.'; tr.appendChild(td); tbody.appendChild(tr); return; } samples.forEach((s,i)=>{ const tr=document.createElement('tr'); const tdIdx=document.createElement('td'); tdIdx.textContent=String(i+1); tdIdx.style.textAlign = 'center'; const tdMember=document.createElement('td'); tdMember.textContent=s.member||'—'; tdMember.style.paddingLeft="100px"; const tdParty=document.createElement('td'); tdParty.textContent=s.party||'—'; const tdDate=document.createElement('td'); tdDate.textContent=s.date||'—'; tdDate.style.textAlign = 'center'; tr.appendChild(tdIdx); tr.appendChild(tdMember); tr.appendChild(tdParty); tr.appendChild(tdDate); tbody.appendChild(tr); }); }
 
-  // Embedding (LSI→PCA 2D) -----------------------------------
+  // Embedding (LSI to PCA 2D) -----------------------------------
   function ensureEmbeddingCard(){
     if (!els.section || document.getElementById('embedding-card')) return;
     const card=document.createElement('div'); card.className='card ta-embed-card'; card.id='embedding-card';
