@@ -6,7 +6,7 @@ from greek_stemmer import GreekStemmer
 import unicodedata
 
 
-#stemmer = GreekStemmer()
+stemmer = GreekStemmer()
 
 FILEPATH = "Greek_Parliament_Proceedings_1989_2020.csv"
 OUTPUT_FILE = "cleaned_data.csv"
