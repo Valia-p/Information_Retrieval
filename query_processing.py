@@ -4,7 +4,7 @@ from greek_stemmer import GreekStemmer
 import spacy
 from spacy.lang.el.stop_words import STOP_WORDS
 
-#stemmer = GreekStemmer()
+stemmer = GreekStemmer()
 
 try:
     nlp = spacy.load("el_core_news_sm")
